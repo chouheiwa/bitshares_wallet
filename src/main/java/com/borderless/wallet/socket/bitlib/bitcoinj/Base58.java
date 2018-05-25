@@ -117,7 +117,6 @@ public class Base58 {
    }
    
    public static byte[] decode(String input) {
-
       if (input.length() == 0) {
          return new byte[0];
       }

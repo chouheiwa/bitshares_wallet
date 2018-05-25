@@ -1,5 +1,6 @@
 package com.borderless.wallet.socket.chain;
 
+import com.borderless.wallet.socket.authority;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.GsonBuilder;
@@ -33,6 +34,7 @@ public class global_config_object {
         mGsonBuilder.registerTypeAdapter(UnsignedInteger.class, new unsigned_number_deserializer.UnsignedIntegerDeserialize());
         mGsonBuilder.registerTypeAdapter(Date.class, new gson_common_deserializer.DateDeserializer());
         mGsonBuilder.registerTypeAdapter(ByteBuffer.class, new gson_common_deserializer.ByteBufferDeserializer());
+        mGsonBuilder.registerTypeAdapter(authority.class,new authority.authority_type_deserializer());
         //mGsonBuilder.setDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
         // register serializer

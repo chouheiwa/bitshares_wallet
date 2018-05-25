@@ -271,10 +271,6 @@ public class wallet_api {
     }
 
     public int load_wallet_file(String strFileName, String password) {
-        if (mWalletObject != null) {
-            return 0;
-        }
-
         //web socket load wallet file
         try {
             FileInputStream fileInputStream = new FileInputStream(strFileName);

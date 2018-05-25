@@ -121,6 +121,10 @@ public class BitsharesWalletWraper {
         mWalletApi.set_passwrod(strPassword);
     }
 
+    public int load_wallet_file(String strFileName, String password) {
+        return mWalletApi.load_wallet_file(strFileName, password);
+    }
+
     public List<account_object> list_my_accounts() {
         return mWalletApi.list_my_accounts();
     }
