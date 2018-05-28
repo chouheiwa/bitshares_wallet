@@ -3,6 +3,9 @@ package com.borderless.wallet.socket;
 import com.borderless.wallet.socket.chain.asset_object;
 import com.borderless.wallet.socket.chain.object_id;
 import com.borderless.wallet.socket.chain.price;
+import com.borderless.wallet.socket.fc.io.base_encoder;
+import com.borderless.wallet.socket.fc.io.raw_type;
+import com.google.common.primitives.UnsignedInteger;
 
 import java.math.BigInteger;
 
@@ -29,5 +32,13 @@ public class asset {
         } else {
             throw new RuntimeException("invalid price object");
         }
+    }
+
+    public void write_to_encoder(base_encoder baseEncoder) {
+        raw_type rawObject = new raw_type();
+
+        baseEncoder.write(rawObject.get_byte_array(this.amount));
+
+        rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(this.asset_id.get_instance()));
     }
 }

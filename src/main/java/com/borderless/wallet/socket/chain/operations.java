@@ -1,5 +1,6 @@
 package com.borderless.wallet.socket.chain;
 
+import com.borderless.wallet.socket.fc.io.datastream_size_encoder;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.gson.*;
 import com.borderless.wallet.socket.account_object;
@@ -27,6 +28,7 @@ public class operations {
     public static final int ID_UPGRADE_ACCOUNT_OPERATION = 8;
     public static final int ID_ACCOUNT_TRANSFER_OPERATION = 9;
     public static final int ID_ASSET_CREATE_OPERATION = 10;
+    public static final int ID_PUBLISHING_ASSET_FEED_OPERATION= 19;
     public static final int ID_VESTING_WITHDRAW_OPERATION= 33;
 
 
@@ -43,6 +45,7 @@ public class operations {
             mHashId2Operation.put(ID_FILL_LMMIT_ORDER_OPERATION, fill_order_operation.class);
             mHashId2Operation.put(ID_CREATE_ACCOUNT_OPERATION, account_create_operation.class);
             mHashId2Operation.put(ID_UPGRADE_ACCOUNT_OPERATION,account_upgrade_operation.class);
+            mHashId2Operation.put(ID_PUBLISHING_ASSET_FEED_OPERATION,asset_publish_feed_operation.class);
             mHashId2Operation.put(ID_VESTING_WITHDRAW_OPERATION,withdraw_vesting_operation.class);
 
             mHashId2OperationFee.put(ID_TRANSER_OPERATION, transfer_operation.fee_parameters_type.class);
@@ -52,7 +55,9 @@ public class operations {
             mHashId2OperationFee.put(ID_FILL_LMMIT_ORDER_OPERATION, fill_order_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_CREATE_ACCOUNT_OPERATION, account_create_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_UPGRADE_ACCOUNT_OPERATION,account_upgrade_operation.fee_parameters_type.class);
+            mHashId2OperationFee.put(ID_PUBLISHING_ASSET_FEED_OPERATION,asset_publish_feed_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_VESTING_WITHDRAW_OPERATION,withdraw_vesting_operation.fee_parameters_type.class);
+
         }
 
         public Type getOperationObjectById(int nId) {
@@ -783,9 +788,45 @@ public class operations {
             rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(extensions.size()));
         }
 
+        private boolean is_cheap_name() {
+            for (int i = 0;i < name.length();i ++) {
+                char c = name.charAt(i);
+
+                switch (c) {
+                    case 'a':
+                    case 'e':
+                    case 'i':
+                    case 'o':
+                    case 'u':
+                    case 'y':
+                        return false;
+                }
+            }
+            return true;
+        }
+
         @Override
         public long calculate_fee(Object objectFeeParameter) {
-            return 0;
+            assert(fee_parameters_type.class.isInstance(objectFeeParameter));
+            fee_parameters_type feeParametersType = (fee_parameters_type)objectFeeParameter;
+
+            long fee = feeParametersType.basic_fee;
+
+            if (!is_cheap_name()) fee = feeParametersType.premium_fee;
+
+            datastream_size_encoder size_encoder = new datastream_size_encoder();
+
+            write_to_encoder(size_encoder);
+
+            BigInteger nSize = BigInteger.valueOf(size_encoder.getSize());
+
+            BigInteger nPrice = BigInteger.valueOf(feeParametersType.price_per_kbyte);
+            BigInteger nKbyte = BigInteger.valueOf(1024);
+            BigInteger nAmount = nPrice.multiply(nSize).divide(nKbyte);
+
+            fee += nAmount.longValue();
+
+            return fee;
         }
 
         @Override
@@ -815,4 +856,64 @@ public class operations {
 
     }
 
+    public static class asset_publish_feed_operation implements base_operation {
+        class fee_parameters_type {
+            long fee       = GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+        }
+        public asset fee;
+        public object_id<account_object> publisher;
+        public object_id<asset_object> asset_id;
+        public price_feed feed;
+        public Set extensions;
+
+        @Override
+        public List<authority> get_required_authorities() { return new ArrayList(); }
+
+        @Override
+        public List<object_id<account_object>> get_required_active_authorities() {
+            ArrayList array = new ArrayList();
+            array.add(fee_payer());
+            return array;
+        }
+
+        @Override
+        public List<object_id<account_object>> get_required_owner_authorities() { return new ArrayList(); }
+
+        @Override
+        public void write_to_encoder(base_encoder baseEncoder) {
+            raw_type rawObject = new raw_type();
+            fee.write_to_encoder(baseEncoder);
+            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(publisher.get_instance()));
+            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(asset_id.get_instance()));
+            feed.write_to_encoder(baseEncoder);
+            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(extensions.size()));
+        }
+
+        @Override
+        public long calculate_fee(Object objectFeeParameter) {
+            assert(fee_parameters_type.class.isInstance(objectFeeParameter));
+            fee_parameters_type feeParametersType = (fee_parameters_type)objectFeeParameter;
+            return feeParametersType.fee;
+        }
+
+        @Override
+        public void set_fee(asset fee) {
+            this.fee = fee;
+        }
+
+        @Override
+        public object_id<account_object> fee_payer() {
+            return publisher;
+        }
+
+        @Override
+        public List<object_id<account_object>> get_account_id_list() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public List<object_id<asset_object>> get_asset_id_list() {
+            return new ArrayList<>();
+        }
+    }
 }

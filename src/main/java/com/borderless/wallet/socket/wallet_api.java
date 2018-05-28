@@ -504,8 +504,6 @@ public class wallet_api {
             return ErrorCode.ERROR_NO_ACCOUNT_OBJECT;
         }
 
-//        Log.i("object",accountObject.name);
-
         /*List<account_object> listAccountObject = lookup_account_names(account_name_or_id);
         // 进行publicKey的比对
         if (listAccountObject.isEmpty()) {
@@ -528,26 +526,6 @@ public class wallet_api {
         mHashMapPub2Priv.put(publicKeyType, privateKeyType);
 
         encrypt_keys();
-
-        //for cli import_key
-//        if (getCliUsedSwitch()) {
-//            String cli_import_key = String.format("import_key %s %s", accountObject.name.toString(), privateKeyType.toString());
-//            try {
-//
-//                String result = CliCmdExecutor.ExecuteCmd(0, cli_import_key, null);
-//                //导入成功
-//                if (result.equals("true")) {
-//                } else {
-//                    //导入失败
-//                    return -1;
-//                }
-//
-//            } catch (JNIException e) {
-//                e.printStackTrace();
-//                //异常按导入失败处理
-//                return -1;
-//            }
-//        }
 
         return 0;
     }
@@ -830,14 +808,7 @@ public class wallet_api {
             accountObject = list_my_accounts().get(index);
             op.seller = accountObject.id;
         } else {
-//            if (loginAccountId != null) {
-//                op.seller = loginAccountId;
-//            } else {
-//                accountObject = get_account(PreferencesController.getInstance().getString(BuildConfig.USERNAME));
-//                if (accountObject != null) {
-//                    op.seller = accountObject.id;
-//                }
-//            }
+
         }
 
         // 填充数据 && 防止科学计数法出现在字符串中
@@ -898,14 +869,7 @@ public class wallet_api {
             accountObject = list_my_accounts().get(index);
             op.funding_account = accountObject.id;
         } else {
-//            if (loginAccountId != null) {
-//                op.seller = loginAccountId;
-//            } else {
-//                accountObject = get_account(PreferencesController.getInstance().getString(BuildConfig.USERNAME));
-//                if (accountObject != null) {
-//                    op.seller = accountObject.id;
-//                }
-//            }
+
         }
         asset_object asset_borrow = lookup_asset_symbols(asset_symbol);
 
@@ -955,22 +919,8 @@ public class wallet_api {
                                    double amount, String amount_to_fee,
                                    String symbol_to_fee, int index) throws NetworkStatusException {
 
-
-//        String minToReceive =  Double.toString(rate * amount);
-//        if (minToReceive.contains(".")) {
-//            if (symbolToReceive.equalsIgnoreCase("BTC") || symbolToReceive.equalsIgnoreCase("LTC") || symbolToReceive.equalsIgnoreCase("ETH") ) {
-//
-//                minToReceive = NumberUtils.formatNumber8((Double.toString(rate * amount) ) + "");
-//            } else {
-//                minToReceive = NumberUtils.formatNumber((Double.toString(rate * amount)) + "");
-//            }
-//        }
-
         return sell_asset(Double.toString(amount), symbolToSell, minToReceive + "",
                 symbolToReceive, 0, false, amount_to_fee, symbol_to_fee, index);
-
-        // return sell_asset(Double.toString(amount), symbolToSell, Double.toString(rate * amount),
-        //        symbolToReceive, 0, false, amount_to_fee,  symbol_to_fee,index);
     }
 
     public signed_transaction sell(String symbolToSell, String symbolToReceive, double rate,
@@ -1005,20 +955,8 @@ public class wallet_api {
                                   double amount, String amount_to_fee,
                                   String symbol_to_fee, int index) throws NetworkStatusException {
 
-//        String amountToSell = Double.toString(rate * amount);
-//        if (amountToSell.contains(".")) {
-//            if (symbolToSell.equalsIgnoreCase("BTC") || symbolToSell.equalsIgnoreCase("LTC") ||symbolToSell.equalsIgnoreCase("ETH")) {
-//
-//                amountToSell = NumberUtils.formatNumber8((Double.toString(rate * amount) ) + "");
-//            } else {
-//                amountToSell = NumberUtils.formatNumber((Double.toString(rate * amount)) + "");
-//            }
-//        }
         return sell_asset(amountToSell + "", symbolToSell, Double.toString(amount),
                 symbolToReceive, 0, false, amount_to_fee, symbol_to_fee, index);
-
-        // return sell_asset(Double.toString(rate * amount), symbolToSell, Double.toString(amount),
-        //         symbolToReceive, 0, false,amount_to_fee,symbol_to_fee,index);
     }
 
     public signed_transaction buy(String symbolToReceive, String symbolToSell, double rate,
@@ -1181,6 +1119,55 @@ public class wallet_api {
         set_operation_fees(tx,get_global_properties().parameters.current_fees);
         //set_operation_fees(tx, get_global_properties().parameters.current_fees);
         return sign_transaction(tx);
+    }
+
+    public signed_transaction publish_asset_feed(String publishing_account,
+                                                 String symbol,
+                                                 long core_exchange_base_amount,
+                                                 long core_exchange_quote_amount,
+                                                 double maintenance_collateral_ratio,
+                                                 double maximum_short_squeeze_ratio) throws NetworkStatusException {
+        assert(maintenance_collateral_ratio>=1&&maintenance_collateral_ratio<=10);
+        assert(maximum_short_squeeze_ratio>=1&&maximum_short_squeeze_ratio<=10);
+
+        List<account_object> account_list = lookup_account_names(publishing_account);
+
+        assert(account_list != null);
+        account_object account = account_list.get(0);
+        assert(account!= null);
+        asset_object asset = lookup_asset_symbols(symbol);
+        asset_object asset_base = lookup_asset_symbols("1.3.0");
+        assert(asset!=null);
+
+        price_feed feed = new price_feed();
+
+        feed.settlement_price = new price(new asset(core_exchange_base_amount,asset.id),new asset(core_exchange_quote_amount,asset_base.id));
+        feed.core_exchange_rate = new price(new asset(core_exchange_base_amount,asset.id),new asset(core_exchange_quote_amount,asset_base.id));
+
+        feed.maintenance_collateral_ratio = Double.valueOf(maintenance_collateral_ratio * 1000).shortValue();
+        feed.maximum_short_squeeze_ratio = Double.valueOf(maximum_short_squeeze_ratio * 1000).shortValue();
+
+        operations.asset_publish_feed_operation operation = new operations.asset_publish_feed_operation();
+
+        operation.publisher = account.id;
+        operation.asset_id = asset.id;
+
+        operation.feed = feed;
+        operation.extensions = new HashSet();
+
+        operations.operation_type operationType = new operations.operation_type();
+        operationType.nOperationType = operations.ID_PUBLISHING_ASSET_FEED_OPERATION;
+        operationType.operationContent = operation;
+
+        signed_transaction tx = new signed_transaction();
+        tx.operations = new ArrayList<>();
+        tx.operations.add(operationType);
+
+        tx.extensions = new HashSet<>();
+        set_operation_fees(tx,get_global_properties().parameters.current_fees);
+
+        return sign_transaction(tx);
+
     }
 
     public signed_transaction create_account_with_pub_key(String publicKey,

@@ -248,7 +248,14 @@ public class BitsharesWalletWraper {
         return mWalletApi.withdraw_vesting(name_or_id,vesting_name,amount,asset_symbol);
     }
 
-
+    public signed_transaction publish_asset_feed(String publishing_account,
+                                                 String symbol,
+                                                 long core_exchange_base_amount,
+                                                 long core_exchange_quote_amount,
+                                                 double maintenance_collateral_ratio,
+                                                 double maximum_short_squeeze_ratio) throws NetworkStatusException {
+        return mWalletApi.publish_asset_feed(publishing_account, symbol, core_exchange_base_amount, core_exchange_quote_amount, maintenance_collateral_ratio, maximum_short_squeeze_ratio);
+    }
 
     public int lock() {
         return mWalletApi.lock();
