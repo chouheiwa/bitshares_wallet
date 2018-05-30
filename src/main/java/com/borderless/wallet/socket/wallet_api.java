@@ -1121,6 +1121,42 @@ public class wallet_api {
         return sign_transaction(tx);
     }
 
+    public signed_transaction create_asset (String issuer,
+                                            String symbol,
+                                            short precision,
+                                            asset_options common,
+                                            bitasset_options bitasset_opts) throws NetworkStatusException {
+        assert(lookup_asset_symbols(symbol) == null);
+        List<account_object> account_list = lookup_account_names(issuer);
+        assert(account_list != null);
+        assert(account_list.size() != 0);
+        account_object issuer_account = account_list.get(0);
+        operations.asset_create_operation operation = new operations.asset_create_operation();
+
+        operation.issuer = issuer_account.id;
+
+        operation.precision = precision;
+
+        operation.symbol = symbol;
+
+        operation.common_options = common;
+
+        operation.bitasset_opts = bitasset_opts;
+
+        operations.operation_type operationType = new operations.operation_type();
+        operationType.nOperationType = operations.ID_ASSET_CREATE_OPERATION;
+        operationType.operationContent = operation;
+
+        signed_transaction tx = new signed_transaction();
+        tx.operations = new ArrayList<>();
+        tx.operations.add(operationType);
+
+        tx.extensions = new HashSet<>();
+        set_operation_fees(tx,get_global_properties().parameters.current_fees);
+
+        return sign_transaction(tx);
+    }
+
     public signed_transaction publish_asset_feed(String publishing_account,
                                                  String symbol,
                                                  long core_exchange_base_amount,

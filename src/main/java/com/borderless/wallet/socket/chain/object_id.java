@@ -1,5 +1,8 @@
 package com.borderless.wallet.socket.chain;
 
+import com.borderless.wallet.socket.fc.io.base_encoder;
+import com.borderless.wallet.socket.fc.io.raw_type;
+import com.google.common.primitives.UnsignedInteger;
 import com.google.gson.*;
 import com.borderless.wallet.socket.account_object;
 
@@ -31,6 +34,12 @@ public class object_id<T> {
         type_id = objectIdManager.mMapTypeToId.get(classOfT);
         space_id = 1;
 
+    }
+
+    public void write_to_encoder(base_encoder baseEncoder) {
+        raw_type rawObject = new raw_type();
+
+        rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(this.get_instance()));
     }
 
     @Override

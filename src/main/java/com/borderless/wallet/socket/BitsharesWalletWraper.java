@@ -248,6 +248,14 @@ public class BitsharesWalletWraper {
         return mWalletApi.withdraw_vesting(name_or_id,vesting_name,amount,asset_symbol);
     }
 
+    public signed_transaction create_asset (String issuer,
+                                            String symbol,
+                                            short precision,
+                                            asset_options common,
+                                            bitasset_options bitasset_opts) throws NetworkStatusException {
+        return mWalletApi.create_asset(issuer, symbol, precision, common, bitasset_opts);
+    }
+
     public signed_transaction publish_asset_feed(String publishing_account,
                                                  String symbol,
                                                  long core_exchange_base_amount,
@@ -710,6 +718,10 @@ public class BitsharesWalletWraper {
 
     public List<operation_history_object> get_account_history_with_last_id(String accountId, int nLimit,String id) throws NetworkStatusException {
         object_id id_object = object_id.create_from_string(accountId);
+
+        if (id_object == null) {
+            id_object = get_account_object(accountId).id;
+        }
 
         return mWalletApi.get_account_history_with_last_id(id_object,nLimit,id);
     }
