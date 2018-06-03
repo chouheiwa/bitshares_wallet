@@ -10,7 +10,7 @@ import com.borderless.wallet.socket.market.MarketTicker;
 import de.bitsharesmunich.graphenej.Address;
 import de.bitsharesmunich.graphenej.Asset;
 import de.bitsharesmunich.graphenej.FileBin;
-import de.bitsharesmunich.graphenej.errors.MalformedAddressException;
+//import de.bitsharesmunich.graphenej.errors.MalformedAddressException;
 import de.bitsharesmunich.graphenej.models.backup.LinkedAccount;
 import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
 import org.json.JSONException;
@@ -701,7 +701,7 @@ public class BitsharesWalletWraper {
         Address address = null;
         try {
             address = new Address(public_key);
-        } catch (MalformedAddressException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return signMessage;
         }
