@@ -20,6 +20,7 @@ import com.borderless.wallet.socket.market.OrderBook;
 import de.bitsharesmunich.graphenej.*;
 import de.bitsharesmunich.graphenej.models.WitnessResponse;
 import okhttp3.*;
+import okhttp3.internal.ws.RealWebSocket;
 import okio.ByteString;
 import org.apache.http.util.TextUtils;
 import org.json.JSONArray;
@@ -237,6 +238,7 @@ public class websocket_api extends WebSocketListener {
         Request request = new Request.Builder().url(strServer).build();
 
         mOkHttpClient = new OkHttpClient();
+
         mWebsocket = mOkHttpClient.newWebSocket(request, this);
         synchronized (mWebsocket) {
             if (mnConnectStatus == WEBSOCKET_CONNECT_INVALID) {
@@ -287,12 +289,8 @@ public class websocket_api extends WebSocketListener {
     }
 
     public synchronized int close() {
-        synchronized (mHashMapIdToProcess) {
-            for (Map.Entry<Integer, IReplyObjectProcess> entry : mHashMapIdToProcess.entrySet()) {
-                synchronized (entry.getValue()) {
-                    entry.getValue().notify();
-                }
-            }
+        for (Map.Entry<Integer, IReplyObjectProcess> entry : mHashMapIdToProcess.entrySet()) {
+            entry.getValue().notify();
         }
 
         if (mWebsocket != null){
@@ -635,7 +633,7 @@ public class websocket_api extends WebSocketListener {
     }
 
     //查询转账交易列表
-    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException {
+    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException,Exception {
         _nHistoryId = get_history_api_id();
         BitsharesWalletWraper bww = new BitsharesWalletWraper();
         List<asset_object> objAssets = bww.list_assets_obj("", 100);
@@ -705,7 +703,7 @@ public class websocket_api extends WebSocketListener {
     }
 
     //查询转账交易列表
-    public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountId, int nLimit,String lastBlockIndex) throws NetworkStatusException, JSONException {
+    public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountId, int nLimit,String lastBlockIndex) throws NetworkStatusException, JSONException,Exception {
         _nHistoryId = get_history_api_id();
         BitsharesWalletWraper bww = new BitsharesWalletWraper();
         List<asset_object> objAssets = bww.list_assets_obj("", 100);

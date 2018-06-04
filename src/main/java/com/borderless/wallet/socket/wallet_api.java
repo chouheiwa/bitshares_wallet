@@ -389,11 +389,11 @@ public class wallet_api {
 
 
 
-    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException {
+    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException,Exception {
         return mWebsocketApi.get_transfer_history(accountId, nLimit);
     }
 
-    public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountId, int nLimit,String flag) throws NetworkStatusException, JSONException {
+    public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountId, int nLimit,String flag) throws NetworkStatusException, JSONException,Exception {
         return mWebsocketApi.get_transfer_history_by_flag(accountId, nLimit,flag);
     }
 
@@ -445,27 +445,6 @@ public class wallet_api {
                 continue;
             }
             mapPublic2Private.put(publicKeyType, privateKeyType);
-
-            //cli import_key
-//            if (getCliUsedSwitch()) {
-//                String cli_import_key = String.format("import_key %s %s", accountObject.name.toString(), privateKeyType.toString());
-//                try {
-////                    String result = CliCmdExecutor.ExecuteCmd(0, cli_import_key, null);
-//                    Log.i("result", result);
-//
-//                    //校验钱包导入是否成功
-//                    if (result.equals("true")) {
-//                        //导入成功，继续执行
-//                    } else {
-//                        //导入失败返回失败，外面不能执行save_wallet_File
-//                        return ErrorCode.ERROR_IMPORT_NOT_MATCH_PRIVATE_KEY;
-//                    }
-//
-//                } catch (JNIException e) {
-//                    e.printStackTrace();
-//                    return -1;
-//                }
-//            }
         }
 
         if (mapPublic2Private.isEmpty() == true) {
@@ -695,7 +674,6 @@ public class wallet_api {
 
             types.private_key_type privateKeyType = mHashMapPub2Priv.get(accountObjectFrom.options.memo_key);
             if (privateKeyType == null || privateKeyType.getPrivateKey() == null) {
-                // // TODO: 07/09/2017 获取失败的问题
                 return null;
             }
             transferOperation.memo.set_message(
@@ -1157,12 +1135,68 @@ public class wallet_api {
         return sign_transaction(tx);
     }
 
+    public signed_transaction issue_asset(String to_account, String amount, String symbol,
+                                          String memo) throws Exception {
+
+        asset_object issue_asset = lookup_asset_symbols(symbol);
+
+        assert(issue_asset == null);
+        List<account_object> account_list = lookup_account_names(to_account);
+        assert(account_list != null);
+        assert(account_list.size() != 0);
+        account_object to_account_obj = account_list.get(0);
+
+        account_list = lookup_account_names(issue_asset.issuer.toString());
+        assert(account_list != null);
+        assert(account_list.size() != 0);
+        account_object from_account = account_list.get(0);
+
+        operations.asset_issue_operation operation = new operations.asset_issue_operation();
+
+        operation.issuer = issue_asset.issuer;
+
+        operation.asset_to_issue = issue_asset.amount_from_string(amount);
+
+        operation.issuer = to_account_obj.id;
+
+        if (memo != null && memo.length() != 0) {
+            operation.memo = new memo_data();
+
+            types.private_key_type privateKeyType = mHashMapPub2Priv.get(from_account.options.memo_key);
+//            if (privateKeyType == null || privateKeyType.getPrivateKey() == null) throw new Exception("没有对应账户的memo签名私钥");
+
+            operation.memo.set_message(
+                    privateKeyType.getPrivateKey(),
+                    to_account_obj.options.memo_key.getPublicKey(),
+                    memo,
+                    0
+            );
+            operation.memo.get_message(
+                    privateKeyType.getPrivateKey(),
+                    to_account_obj.options.memo_key.getPublicKey()
+            );
+        }
+
+        operations.operation_type operationType = new operations.operation_type();
+        operationType.nOperationType = operations.ID_ASSET_CREATE_OPERATION;
+        operationType.operationContent = operation;
+
+        signed_transaction tx = new signed_transaction();
+        tx.operations = new ArrayList<>();
+        tx.operations.add(operationType);
+
+        tx.extensions = new HashSet<>();
+        set_operation_fees(tx,get_global_properties().parameters.current_fees);
+
+        return sign_transaction(tx);
+    }
+
     public signed_transaction publish_asset_feed(String publishing_account,
                                                  String symbol,
                                                  long core_exchange_base_amount,
                                                  long core_exchange_quote_amount,
                                                  double maintenance_collateral_ratio,
-                                                 double maximum_short_squeeze_ratio) throws NetworkStatusException {
+                                                 double maximum_short_squeeze_ratio) throws Exception {
         assert(maintenance_collateral_ratio>=1&&maintenance_collateral_ratio<=10);
         assert(maximum_short_squeeze_ratio>=1&&maximum_short_squeeze_ratio<=10);
 

@@ -24,7 +24,7 @@ public class asset_object {
     /// Maximum number of digits after the decimal point (must be <= 12)
     public int precision = 0;
     /// ID of the account which issued this asset.
-    object_id<account_object> issuer;
+    public object_id<account_object> issuer;
 
     public asset_options options;
 

@@ -28,6 +28,7 @@ public class operations {
     public static final int ID_UPGRADE_ACCOUNT_OPERATION = 8;
     public static final int ID_ACCOUNT_TRANSFER_OPERATION = 9;
     public static final int ID_ASSET_CREATE_OPERATION = 10;
+    public static final int ID_ASSET_ISSUE_OPERATION = 14;
     public static final int ID_PUBLISHING_ASSET_FEED_OPERATION= 19;
     public static final int ID_VESTING_WITHDRAW_OPERATION= 33;
 
@@ -48,6 +49,7 @@ public class operations {
             mHashId2Operation.put(ID_PUBLISHING_ASSET_FEED_OPERATION,asset_publish_feed_operation.class);
             mHashId2Operation.put(ID_VESTING_WITHDRAW_OPERATION,withdraw_vesting_operation.class);
             mHashId2Operation.put(ID_ASSET_CREATE_OPERATION,asset_create_operation.class);
+            mHashId2Operation.put(ID_ASSET_ISSUE_OPERATION,asset_issue_operation.class);
 
             mHashId2OperationFee.put(ID_TRANSER_OPERATION, transfer_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_CREATE_LIMIT_ORDER_OPERATION, limit_order_create_operation.fee_parameters_type.class);
@@ -59,6 +61,7 @@ public class operations {
             mHashId2OperationFee.put(ID_PUBLISHING_ASSET_FEED_OPERATION,asset_publish_feed_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_VESTING_WITHDRAW_OPERATION,withdraw_vesting_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_ASSET_CREATE_OPERATION,asset_create_operation.fee_parameters_type.class);
+            mHashId2OperationFee.put(ID_ASSET_ISSUE_OPERATION,asset_issue_operation.fee_parameters_type.class);
 
         }
 
@@ -165,26 +168,16 @@ public class operations {
         @Override
         public void write_to_encoder(base_encoder baseEncoder) {
             raw_type rawObject = new raw_type();
-            baseEncoder.write(rawObject.get_byte_array(fee.amount));
-            //baseEncoder.write(rawObject.get_byte_array(fee.asset_id.get_instance()));
-            rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(fee.asset_id.get_instance()));
+            fee.write_to_encoder(baseEncoder);
             //baseEncoder.write(rawObject.get_byte_array(from.get_instance()));
-            rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(from.get_instance()));
+            from.write_to_encoder(baseEncoder);
             //baseEncoder.write(rawObject.get_byte_array(to.get_instance()));
-            rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(to.get_instance()));
-            baseEncoder.write(rawObject.get_byte_array(amount.amount));
-            //baseEncoder.write(rawObject.get_byte_array(amount.asset_id.get_instance()));
-            rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(amount.asset_id.get_instance()));
+            to.write_to_encoder(baseEncoder);
+            amount.write_to_encoder(baseEncoder);
             baseEncoder.write(rawObject.get_byte(memo != null));
             if (memo != null) {
-                baseEncoder.write(memo.from.key_data);
-                baseEncoder.write(memo.to.key_data);
-                baseEncoder.write(rawObject.get_byte_array(memo.nonce));
-                byte[] byteMessage = memo.message.array();
-                rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(byteMessage.length));
-                baseEncoder.write(byteMessage);
+                memo.write_to_encoder(baseEncoder);
             }
-
             //baseEncoder.write(rawObject.get_byte_array(extensions.size()));
             rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(extensions.size()));
 
@@ -970,6 +963,107 @@ public class operations {
         @Override
         public List<object_id<asset_object>> get_asset_id_list() {
             return new ArrayList<>();
+        }
+    }
+
+    public static class asset_issue_operation implements base_operation {
+
+        class fee_parameters_type {
+            long fee               = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
+            long price_per_kbyte   = GRAPHENE_BLOCKCHAIN_PRECISION;///< the cost to register the cheapest non-free account
+        }
+
+        public asset fee;
+
+        public object_id<account_object> issuer;
+
+        public asset asset_to_issue;
+
+        public object_id<account_object> issue_to_account;
+
+        public memo_data memo;
+
+        public Set extensions = new HashSet();
+
+        @Override
+        public List<authority> get_required_authorities() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public List<object_id<account_object>> get_required_active_authorities() {
+            ArrayList array = new ArrayList();
+
+            array.add(fee_payer());
+
+            return array;
+        }
+
+        @Override
+        public List<object_id<account_object>> get_required_owner_authorities() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public void write_to_encoder(base_encoder baseEncoder) {
+            fee.write_to_encoder(baseEncoder);
+            issuer.write_to_encoder(baseEncoder);
+            asset_to_issue.write_to_encoder(baseEncoder);
+            asset_to_issue.write_to_encoder(baseEncoder);
+
+            issue_to_account.write_to_encoder(baseEncoder);
+
+            raw_type rawObject = new raw_type();
+            baseEncoder.write(rawObject.get_byte(memo != null));
+            if (memo != null) {
+                memo.write_to_encoder(baseEncoder);
+            }
+
+            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(extensions.size()));
+
+        }
+
+        @Override
+        public long calculate_fee(Object objectFeeParameter) {
+            assert(fee_parameters_type.class.isInstance(objectFeeParameter));
+            fee_parameters_type feeParametersType = (fee_parameters_type)objectFeeParameter;
+            return calculate_fee(feeParametersType);
+        }
+
+        public long calculate_fee(fee_parameters_type feeParametersType) {
+            long lFee = feeParametersType.fee;
+            if (memo != null) {
+                // 计算数据价格
+                Gson gson = global_config_object.getInstance().getGsonBuilder().create();
+                BigInteger nSize = BigInteger.valueOf(gson.toJson(memo).length());
+                BigInteger nPrice = BigInteger.valueOf(feeParametersType.price_per_kbyte);
+                BigInteger nKbyte = BigInteger.valueOf(1024);
+                BigInteger nAmount = nPrice.multiply(nSize).divide(nKbyte);
+
+                lFee += nAmount.longValue();
+            }
+
+            return lFee;
+        }
+
+        @Override
+        public void set_fee(asset fee) {
+            this.fee = fee;
+        }
+
+        @Override
+        public object_id<account_object> fee_payer() {
+            return issuer;
+        }
+
+        @Override
+        public List<object_id<account_object>> get_account_id_list() {
+            return null;
+        }
+
+        @Override
+        public List<object_id<asset_object>> get_asset_id_list() {
+            return null;
         }
     }
 

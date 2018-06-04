@@ -1,6 +1,7 @@
 package com.borderless.wallet.socket.fc.crypto;
 
 import com.google.common.io.BaseEncoding;
+import org.jetbrains.annotations.Nullable;
 import org.spongycastle.crypto.digests.SHA512Digest;
 
 import java.util.Arrays;
@@ -8,6 +9,27 @@ import java.util.Arrays;
 
 public class sha512_object {
     public byte[] hash = new byte[64];
+
+    @Nullable
+    public static sha512_object create_from_string(String strPassword) {
+        SHA512Digest digest = new SHA512Digest();
+        sha512_object sha512Object ;
+        try{
+            byte[] bytePassword = strPassword.getBytes();
+            digest.update(bytePassword, 0, bytePassword.length);
+
+            byte[] byteHash = new byte[64];
+            digest.doFinal(byteHash, 0);
+
+            sha512Object = new sha512_object();
+            System.arraycopy(byteHash, 0, sha512Object.hash, 0, byteHash.length);
+        }catch (Exception e){
+            return null;
+        }
+
+
+        return sha512Object;
+    }
 
     @Override
     public String toString() {
@@ -19,26 +41,6 @@ public class sha512_object {
     public boolean equals(Object obj) {
         sha512_object sha512Object = (sha512_object)obj;
         return Arrays.equals(hash, sha512Object.hash);
-    }
-
-    public static sha512_object create_from_string(String strContent) {
-        SHA512Digest digest = new SHA512Digest();
-        sha512_object sha512Object ;
-        try{
-            byte[] bytePassword = strContent.getBytes();
-            digest.update(bytePassword, 0, bytePassword.length);
-
-            byte[] byteHash = new byte[64];
-            digest.doFinal(byteHash, 0);
-
-            sha512Object = new sha512_object();
-            System.arraycopy(byteHash, 0, sha512Object.hash, 0, byteHash.length);
-        }catch (Exception e){
-           return null;
-        }
-
-
-        return sha512Object;
     }
 
     public static sha512_object create_from_byte_array(byte[] byteArray, int offset, int length) {

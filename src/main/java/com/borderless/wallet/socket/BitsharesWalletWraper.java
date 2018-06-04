@@ -5,12 +5,10 @@ import com.borderless.wallet.net.model.AllHistory;
 import com.borderless.wallet.net.model.HistoryResponseModel;
 import com.borderless.wallet.socket.chain.*;
 import com.borderless.wallet.socket.common.ErrorCode;
-import com.borderless.wallet.socket.exception.NetworkStatusException;
 import com.borderless.wallet.socket.market.MarketTicker;
 import de.bitsharesmunich.graphenej.Address;
 import de.bitsharesmunich.graphenej.Asset;
 import de.bitsharesmunich.graphenej.FileBin;
-//import de.bitsharesmunich.graphenej.errors.MalformedAddressException;
 import de.bitsharesmunich.graphenej.models.backup.LinkedAccount;
 import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
 import org.json.JSONException;
@@ -136,7 +134,7 @@ public class BitsharesWalletWraper {
             if (nRet != 0) {
                 return nRet;
             }
-        } catch (NetworkStatusException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return -1;
         }
@@ -155,7 +153,7 @@ public class BitsharesWalletWraper {
             if (nRet != 0) {
                 return nRet;
             }
-        } catch (NetworkStatusException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return -1;
         }
@@ -175,7 +173,7 @@ public class BitsharesWalletWraper {
             if (nRet != 0) {
                 return nRet;
             }
-        } catch (NetworkStatusException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ErrorCode.ERROR_IMPORT_NETWORK_FAIL;
         }
@@ -236,15 +234,15 @@ public class BitsharesWalletWraper {
 
     public signed_transaction create_account_with_pub_key(String pubKey, String strAccountName,
                                                  String strRegistar, String strReferrer, int refferPercent)
-            throws NetworkStatusException {
+            throws Exception {
         return mWalletApi.create_account_with_pub_key(pubKey,strAccountName,strRegistar,strReferrer,refferPercent);
     }
 
-    public signed_transaction upgrade_account(String name, boolean upgrade_to_lifetime_member)throws NetworkStatusException  {
+    public signed_transaction upgrade_account(String name, boolean upgrade_to_lifetime_member)throws Exception  {
         return  mWalletApi.upgrade_account(name,upgrade_to_lifetime_member);
     }
 
-    public signed_transaction with_draw_vesting(String name_or_id, String vesting_name,String amount,String asset_symbol) throws NetworkStatusException {
+    public signed_transaction with_draw_vesting(String name_or_id, String vesting_name,String amount,String asset_symbol) throws Exception {
         return mWalletApi.withdraw_vesting(name_or_id,vesting_name,amount,asset_symbol);
     }
 
@@ -252,8 +250,13 @@ public class BitsharesWalletWraper {
                                             String symbol,
                                             short precision,
                                             asset_options common,
-                                            bitasset_options bitasset_opts) throws NetworkStatusException {
+                                            bitasset_options bitasset_opts) throws Exception {
         return mWalletApi.create_asset(issuer, symbol, precision, common, bitasset_opts);
+    }
+
+    public signed_transaction issue_asset(String to_account, String amount, String symbol,
+                                          String memo) throws Exception {
+        return mWalletApi.issue_asset(to_account, amount, symbol, memo);
     }
 
     public signed_transaction publish_asset_feed(String publishing_account,
@@ -261,7 +264,7 @@ public class BitsharesWalletWraper {
                                                  long core_exchange_base_amount,
                                                  long core_exchange_quote_amount,
                                                  double maintenance_collateral_ratio,
-                                                 double maximum_short_squeeze_ratio) throws NetworkStatusException {
+                                                 double maximum_short_squeeze_ratio) throws Exception {
         return mWalletApi.publish_asset_feed(publishing_account, symbol, core_exchange_base_amount, core_exchange_quote_amount, maintenance_collateral_ratio, maximum_short_squeeze_ratio);
     }
 
@@ -269,7 +272,7 @@ public class BitsharesWalletWraper {
         return mWalletApi.lock();
     }
 
-    public List<asset> list_balances(boolean bRefresh) throws NetworkStatusException {
+    public List<asset> list_balances(boolean bRefresh) throws Exception {
         List<asset> listAllAsset = new ArrayList<>();
         for (account_object accountObject : list_my_accounts()) {
             List<asset> listAsset = list_account_balance(accountObject.id, bRefresh);
@@ -281,7 +284,7 @@ public class BitsharesWalletWraper {
     }
 
     public List<asset> list_account_balance(object_id<account_object> accountObjectId,
-                                            boolean bRefresh) throws NetworkStatusException {
+                                            boolean bRefresh) throws Exception {
         List<asset> listAsset = null;
         if (mMapAccountId2Asset != null) {
             listAsset = mMapAccountId2Asset.get(accountObjectId);
@@ -297,15 +300,15 @@ public class BitsharesWalletWraper {
 
     }
 
-    public List<Asset> list_assets(String strLowerBound, int nLimit) throws NetworkStatusException {
+    public List<Asset> list_assets(String strLowerBound, int nLimit) throws Exception {
         return mWalletApi.list_assets(strLowerBound, nLimit);
     }
 
-    public List<asset_object> list_assets_obj(String strLowerBound, int nLimit) throws NetworkStatusException {
+    public List<asset_object> list_assets_obj(String strLowerBound, int nLimit) throws Exception {
         return mWalletApi.list_assets_obj(strLowerBound, nLimit);
     }
 
-    public Map<object_id<asset_object>, asset_object> get_assets(List<object_id<asset_object>> listAssetObjectId) throws NetworkStatusException {
+    public Map<object_id<asset_object>, asset_object> get_assets(List<object_id<asset_object>> listAssetObjectId) throws Exception {
         Map<object_id<asset_object>, asset_object> mapId2Object = new HashMap<>();
 
         List<object_id<asset_object>> listRequestId = new ArrayList<>();
@@ -329,19 +332,19 @@ public class BitsharesWalletWraper {
         return mapId2Object;
     }
 
-    public asset_object lookup_asset_symbols(String strAssetSymbol) throws NetworkStatusException {
+    public asset_object lookup_asset_symbols(String strAssetSymbol) throws Exception {
         return mWalletApi.lookup_asset_symbols(strAssetSymbol);
     }
 
-    public String lookup_asset_symbols_rate(String strAssetSymbol) throws NetworkStatusException {
+    public String lookup_asset_symbols_rate(String strAssetSymbol) throws Exception {
         return mWalletApi.lookup_asset_symbols_rate(strAssetSymbol);
     }
 
-    public String  get_Fee(String id,int op)  throws NetworkStatusException  {
+    public String  get_Fee(String id,int op)  throws Exception  {
         return mWalletApi.get_Fee(id,op);
     }
 
-    public Map<object_id<account_object>, account_object> get_accounts(List<object_id<account_object>> listAccountObjectId) throws NetworkStatusException {
+    public Map<object_id<account_object>, account_object> get_accounts(List<object_id<account_object>> listAccountObjectId) throws Exception {
         Map<object_id<account_object>, account_object> mapId2Object = new HashMap<>();
 
         List<object_id<account_object>> listRequestId = new ArrayList<>();
@@ -367,22 +370,22 @@ public class BitsharesWalletWraper {
 
     public signed_transaction transfer(String strFrom, String strTo, String strAmount, String strAssetSymbol,
                                        String strMemo, String amount_to_fee, String symbol_to_fee)
-            throws NetworkStatusException {
+            throws Exception {
         signed_transaction signedTransaction = mWalletApi.transfer(strFrom,  strTo, strAmount, strAssetSymbol, strMemo, amount_to_fee, symbol_to_fee);
         return signedTransaction;
     }
 
-    public signed_transaction borrow_asset(String amount_to_borrow,String asset_symbol,String amount_to_collateral,int index) throws NetworkStatusException {
+    public signed_transaction borrow_asset(String amount_to_borrow,String asset_symbol,String amount_to_collateral,int index) throws Exception {
         return mWalletApi.borrow_asset(amount_to_borrow,asset_symbol,amount_to_collateral,index);
     }
 
     // 获取区块信息
-    public block_chain_info info() throws NetworkStatusException {
+    public block_chain_info info() throws Exception {
         return mWalletApi.get_info();
     }
 
     //获取块信息
-    public block_object get_block(int  nblocknum) throws  NetworkStatusException {
+    public block_object get_block(int  nblocknum) throws  Exception {
 
         return mWalletApi.get_block(nblocknum);
     }
@@ -390,7 +393,7 @@ public class BitsharesWalletWraper {
     // 获取对于基础货币的所有市场价格
     public Map<object_id<asset_object>, List<bucket_object>> get_market_histories_base(List<object_id<asset_object>> listAssetObjectId
     ,Integer bugket,Date dateObjectStart, Date dateObjectEnd
-    ) throws NetworkStatusException {
+    ) throws Exception {
 //        dynamic_global_property_object dynamicGlobalPropertyObject = mWalletApi.get_dynamic_global_properties();
 //
 //        Date dateObject = dynamicGlobalPropertyObject.time;
@@ -429,11 +432,11 @@ public class BitsharesWalletWraper {
         return mapId2BucketObject;
     }
 
-    public block_header get_block_header(int nBlockNumber) throws NetworkStatusException {
+    public block_header get_block_header(int nBlockNumber) throws Exception {
         return mWalletApi.get_block_header(nBlockNumber);
     }
 
-    public List<operation_history_object> get_history(boolean bRefresh) throws NetworkStatusException {
+    public List<operation_history_object> get_history(boolean bRefresh) throws Exception {
         List<operation_history_object> listAllHistoryObject = new ArrayList<>();
         for (account_object accountObject : list_my_accounts()) {
             List<operation_history_object> listHistoryObject = get_account_history(
@@ -450,7 +453,7 @@ public class BitsharesWalletWraper {
 
     public List<operation_history_object> get_account_history(object_id<account_object> accountObjectId,
                                                               int nLimit,
-                                                              boolean bRefresh) throws NetworkStatusException {
+                                                              boolean bRefresh) throws Exception {
         List<operation_history_object> listHistoryObject = mMapAccountId2History.get(accountObjectId);
         if (listHistoryObject == null || bRefresh) {
             listHistoryObject = mWalletApi.get_account_history(accountObjectId, nLimit);
@@ -524,7 +527,7 @@ public class BitsharesWalletWraper {
 
             return mBitshareData;
 
-        } catch (NetworkStatusException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -534,7 +537,7 @@ public class BitsharesWalletWraper {
     public signed_transaction sell_asset(String amountToSell, String symbolToSell,
                                          String minToReceive, String symbolToReceive,
                                          int timeoutSecs, boolean fillOrKill,String amount_to_fee,String symbol_to_fee,int index)
-            throws NetworkStatusException {
+            throws Exception {
         return mWalletApi.sell_asset(amountToSell, symbolToSell, minToReceive, symbolToReceive,
                 timeoutSecs, fillOrKill,amount_to_fee,symbol_to_fee,index);
     }
@@ -556,25 +559,25 @@ public class BitsharesWalletWraper {
 
     public signed_transaction sell(String quote, String base, double minToReceive, double amount, String amount_to_fee,
                                    String symbol_to_fee,int index)
-            throws NetworkStatusException {
+            throws Exception {
         return mWalletApi.sell(quote, base, minToReceive, amount,amount_to_fee,symbol_to_fee,index);
     }
 
     public signed_transaction sell(String base, String quote, double rate, double amount,
                                    int timeoutSecs, String amount_to_fee,
-                                   String symbol_to_fee,int index) throws NetworkStatusException {
+                                   String symbol_to_fee,int index) throws Exception {
         return mWalletApi.sell(base, quote, rate, amount, timeoutSecs,amount_to_fee,symbol_to_fee,index);
     }
 
     public signed_transaction buy(  String quote, String base , double amountToSell, double amount, String amount_to_fee,
                                   String symbol_to_fee,int index)
-            throws NetworkStatusException {
+            throws Exception {
         return mWalletApi.buy(quote, base, amountToSell, amount,amount_to_fee,symbol_to_fee,index);
     }
 
     public signed_transaction buy(String base, String quote, double rate, double amount,
                                   int timeoutSecs, String amount_to_fee,
-                                  String symbol_to_fee,int index) throws NetworkStatusException {
+                                  String symbol_to_fee,int index) throws Exception {
         return mWalletApi.buy(base, quote, rate, amount, timeoutSecs,amount_to_fee,symbol_to_fee,index);
     }
 
@@ -582,13 +585,13 @@ public class BitsharesWalletWraper {
         return mBitshareData;
     }
 
-    public account_object get_account_object(String strAccount) throws NetworkStatusException {
+    public account_object get_account_object(String strAccount) throws Exception {
         return mWalletApi.get_account(strAccount);
     }
 
     public asset transfer_calculate_fee(String strAmount,
                                         String strAssetSymbol,
-                                        String strMemo) throws NetworkStatusException {
+                                        String strMemo) throws Exception {
         return mWalletApi.transfer_calculate_fee(strAmount, strAssetSymbol, strMemo);
     }
 
@@ -596,21 +599,21 @@ public class BitsharesWalletWraper {
         return mWalletApi.decrypt_memo_message(memoData);
     }
 
-    public full_account get_full_account(String name, boolean subscribe) throws NetworkStatusException, JSONException {
+    public full_account get_full_account(String name, boolean subscribe) throws Exception, JSONException {
         return mWalletApi.get_full_account(name, subscribe);
     }
 
     public List<full_account_object> get_full_accounts(List<String> names, boolean subscribe)
-            throws NetworkStatusException {
+            throws Exception {
         return mWalletApi.get_full_accounts(names, subscribe);
     }
 
     public signed_transaction cancel_order(object_id<limit_order_object> id)
-            throws NetworkStatusException {
+            throws Exception {
         return mWalletApi.cancel_order(id);
     }
 
-    public global_property_object get_global_properties() throws NetworkStatusException {
+    public global_property_object get_global_properties() throws Exception {
         return mWalletApi.get_global_properties();
     }
 
@@ -618,12 +621,12 @@ public class BitsharesWalletWraper {
         return  mWalletApi.get_wallet_hash();
     }
 
-    public boolean is_public_key_registered(String pub_key) throws NetworkStatusException {
+    public boolean is_public_key_registered(String pub_key) throws Exception {
         return mWalletApi.is_public_key_registered(pub_key);
     }
 
     //查询矿池总量
-    public long get_witness_budget() throws NetworkStatusException {
+    public long get_witness_budget() throws Exception {
         long witness_budget = 0;
         dynamic_global_property_object  dynamic_obj =  mWalletApi.get_dynamic_global_properties();
         if (dynamic_obj == null) {
@@ -659,7 +662,7 @@ public class BitsharesWalletWraper {
 
                     }
                 }
-            } catch (NetworkStatusException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -678,7 +681,7 @@ public class BitsharesWalletWraper {
         BitsharesWalletWraper bww = new BitsharesWalletWraper();
         try {
             myAccount = bww.get_account_object(accountName);
-        } catch (NetworkStatusException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         //网络异常
@@ -712,11 +715,11 @@ public class BitsharesWalletWraper {
 
         return signMessage;
     }
-    public List<account_object> lookup_account_names(String strAccountName) throws NetworkStatusException {
+    public List<account_object> lookup_account_names(String strAccountName) throws Exception {
         return mWalletApi.lookup_account_names(strAccountName);
     }
 
-    public List<operation_history_object> get_account_history_with_last_id(String accountId, int nLimit,String id) throws NetworkStatusException {
+    public List<operation_history_object> get_account_history_with_last_id(String accountId, int nLimit,String id) throws Exception {
         object_id id_object = object_id.create_from_string(accountId);
 
         if (id_object == null) {
@@ -728,7 +731,7 @@ public class BitsharesWalletWraper {
 
 
     public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountObjectId,
-                                                                    int nLimit) throws NetworkStatusException ,JSONException {
+                                                                    int nLimit) throws Exception ,JSONException {
         List<HistoryResponseModel.DataBean> listHistoryObject;
 
         listHistoryObject = mWalletApi.get_transfer_history(accountObjectId, nLimit);
@@ -742,11 +745,11 @@ public class BitsharesWalletWraper {
      * @param nLimit
      * @param flag
      * @return
-     * @throws NetworkStatusException
+     * @throws Exception
      * @throws JSONException
      */
     public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountObjectId,
-                                                                            int nLimit,String flag) throws NetworkStatusException ,JSONException {
+                                                                            int nLimit,String flag) throws Exception ,JSONException {
         List<HistoryResponseModel.DataBean> listHistoryObject;
 
         listHistoryObject = mWalletApi.get_transfer_history_by_flag(accountObjectId, nLimit, flag);
@@ -758,21 +761,21 @@ public class BitsharesWalletWraper {
      * @param base
      * @param quote
      * @return
-     * @throws NetworkStatusException
+     * @throws Exception
      */
-    public MarketTicker get_ticker(String base, String quote) throws NetworkStatusException {
+    public MarketTicker get_ticker(String base, String quote) throws Exception {
         return mWalletApi.get_ticker(base, quote);
     }
 
-    public String get_bitasset_data(String symbol) throws NetworkStatusException {
+    public String get_bitasset_data(String symbol) throws Exception {
         return mWalletApi.get_bitasset_data(symbol);
     }
 
-    public AllHistory get_all_history(String baseSymbolId, String qouteSymbolId, int nLimit) throws NetworkStatusException {
+    public AllHistory get_all_history(String baseSymbolId, String qouteSymbolId, int nLimit) throws Exception {
         return mWalletApi.get_all_history(baseSymbolId, qouteSymbolId,nLimit);
     }
 
-    public com.borderless.wallet.socket.market.OrderBook get_order_book(String base, String quote, int limit) throws  NetworkStatusException{
+    public com.borderless.wallet.socket.market.OrderBook get_order_book(String base, String quote, int limit) throws  Exception{
         return  mWalletApi.get_order_book(base,quote,limit);
     }
 }

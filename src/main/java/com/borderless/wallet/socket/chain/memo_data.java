@@ -1,5 +1,7 @@
 package com.borderless.wallet.socket.chain;
 
+import com.borderless.wallet.socket.fc.io.base_encoder;
+import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.borderless.wallet.socket.bitlib.bitcoinj.Base58;
 import com.borderless.wallet.socket.fc.crypto.aes;
@@ -114,6 +116,17 @@ public class memo_data {
         System.arraycopy(sha512Object.hash, 32, ivBytes, 0, ivBytes.length);
 
         message = aes.encrypt(byteKey, ivBytes, byteBufferText.array());
+    }
+
+    public void write_to_encoder(base_encoder baseEncoder) {
+        raw_type rawObject = new raw_type();
+
+        baseEncoder.write(this.from.key_data);
+        baseEncoder.write(this.to.key_data);
+        baseEncoder.write(rawObject.get_byte_array(this.nonce));
+        byte[] byteMessage = this.message.array();
+        rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(byteMessage.length));
+        baseEncoder.write(byteMessage);
     }
 
     public String get_message(private_key privateKey, public_key publicKey) {
