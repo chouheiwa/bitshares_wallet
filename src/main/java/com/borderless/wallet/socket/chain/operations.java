@@ -1009,8 +1009,6 @@ public class operations {
             fee.write_to_encoder(baseEncoder);
             issuer.write_to_encoder(baseEncoder);
             asset_to_issue.write_to_encoder(baseEncoder);
-            asset_to_issue.write_to_encoder(baseEncoder);
-
             issue_to_account.write_to_encoder(baseEncoder);
 
             raw_type rawObject = new raw_type();
@@ -1032,16 +1030,22 @@ public class operations {
 
         public long calculate_fee(fee_parameters_type feeParametersType) {
             long lFee = feeParametersType.fee;
-            if (memo != null) {
-                // 计算数据价格
-                Gson gson = global_config_object.getInstance().getGsonBuilder().create();
-                BigInteger nSize = BigInteger.valueOf(gson.toJson(memo).length());
-                BigInteger nPrice = BigInteger.valueOf(feeParametersType.price_per_kbyte);
-                BigInteger nKbyte = BigInteger.valueOf(1024);
-                BigInteger nAmount = nPrice.multiply(nSize).divide(nKbyte);
 
-                lFee += nAmount.longValue();
+            datastream_size_encoder size_encoder = new datastream_size_encoder();
+
+            size_encoder.write(new raw_type().get_byte(memo != null));
+
+            if (memo != null) {
+                memo.write_to_encoder(size_encoder);
             }
+
+            BigInteger nSize = BigInteger.valueOf(size_encoder.getSize());
+
+            BigInteger nPrice = BigInteger.valueOf(feeParametersType.price_per_kbyte);
+            BigInteger nKbyte = BigInteger.valueOf(1024);
+            BigInteger nAmount = nPrice.multiply(nSize).divide(nKbyte);
+
+            lFee += nAmount.longValue();
 
             return lFee;
         }

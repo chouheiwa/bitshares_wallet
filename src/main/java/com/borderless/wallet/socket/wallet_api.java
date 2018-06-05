@@ -1146,20 +1146,20 @@ public class wallet_api {
         assert(account_list.size() != 0);
         account_object to_account_obj = account_list.get(0);
 
-        account_list = lookup_account_names(issue_asset.issuer.toString());
-        assert(account_list != null);
-        assert(account_list.size() != 0);
-        account_object from_account = account_list.get(0);
-
         operations.asset_issue_operation operation = new operations.asset_issue_operation();
 
         operation.issuer = issue_asset.issuer;
 
         operation.asset_to_issue = issue_asset.amount_from_string(amount);
 
-        operation.issuer = to_account_obj.id;
+        operation.issue_to_account = to_account_obj.id;
 
         if (memo != null && memo.length() != 0) {
+            account_list = lookup_account_names(issue_asset.issuer.toString());
+            assert(account_list != null);
+            assert(account_list.size() != 0);
+            account_object from_account = account_list.get(0);
+
             operation.memo = new memo_data();
 
             types.private_key_type privateKeyType = mHashMapPub2Priv.get(from_account.options.memo_key);
@@ -1178,7 +1178,7 @@ public class wallet_api {
         }
 
         operations.operation_type operationType = new operations.operation_type();
-        operationType.nOperationType = operations.ID_ASSET_CREATE_OPERATION;
+        operationType.nOperationType = operations.ID_ASSET_ISSUE_OPERATION;
         operationType.operationContent = operation;
 
         signed_transaction tx = new signed_transaction();

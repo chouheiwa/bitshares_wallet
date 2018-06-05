@@ -187,13 +187,6 @@ public class websocket_api extends WebSocketListener {
                     mWebsocket.notify();
                 }
             }
-
-            synchronized (mHashMapIdToProcess) {
-                for (Map.Entry<Integer, IReplyObjectProcess> entry : mHashMapIdToProcess.entrySet()) {
-                    entry.getValue().notifyFailure(t);
-                }
-                mHashMapIdToProcess.clear();
-            }
         }
     }
 
@@ -289,9 +282,7 @@ public class websocket_api extends WebSocketListener {
     }
 
     public synchronized int close() {
-        for (Map.Entry<Integer, IReplyObjectProcess> entry : mHashMapIdToProcess.entrySet()) {
-            entry.getValue().notify();
-        }
+        mHashMapIdToProcess.clear();
 
         if (mWebsocket != null){
             mWebsocket.close(1000, "Close");
@@ -308,8 +299,7 @@ public class websocket_api extends WebSocketListener {
         mOkHttpClient = null;
         mWebsocket = null;
         mnConnectStatus = WEBSOCKET_CONNECT_INVALID;
-        //for cli connect status
-        //mnCliConnectStatus = WEBSOCKET_CONNECT_INVALID;
+
         _nDatabaseId = -1;
         _nBroadcastId = -1;
         _nHistoryId = -1;
@@ -367,8 +357,6 @@ public class websocket_api extends WebSocketListener {
             _nDatabaseId = id;
         } else {
             close();
-//            mWebsocket.request().url().
-
             connect(mWebsocket.request().url().toString());
             _nDatabaseId = get_websocket_bitshares_api_id("database");
         }
