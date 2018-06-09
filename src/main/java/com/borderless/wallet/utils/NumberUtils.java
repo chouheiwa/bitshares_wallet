@@ -1,7 +1,5 @@
 package com.borderless.wallet.utils;
 
-import org.apache.http.util.TextUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

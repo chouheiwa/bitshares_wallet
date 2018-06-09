@@ -1,10 +1,10 @@
 package com.borderless.wallet.socket;
 
+import com.borderless.wallet.utils.TextUtils;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import com.borderless.wallet.constants.OwnerInfoConstant;
 import com.borderless.wallet.utils.NumberUtils;
 import com.borderless.wallet.net.model.AllHistory;
 import com.borderless.wallet.net.model.HistoryResponseModel;
@@ -19,19 +19,15 @@ import com.borderless.wallet.socket.fc.io.datastream_encoder;
 import com.borderless.wallet.socket.fc.io.datastream_size_encoder;
 import com.borderless.wallet.socket.fc.io.raw_type;
 import com.borderless.wallet.socket.market.MarketTicker;
-import de.bitsharesmunich.graphenej.Asset;
-import de.bitsharesmunich.graphenej.BrainKey;
-import org.apache.http.util.TextUtils;
 import org.bitcoinj.core.ECKey;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.digests.SHA512Digest;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -115,8 +111,6 @@ public class wallet_api {
     public wallet_api(String ws_server) {
         this.ws_server = ws_server;
     }
-
-
 
     public int initialize(String chain_id) {
         int nRet = mWebsocketApi.connect(ws_server);
@@ -397,12 +391,8 @@ public class wallet_api {
         return mWebsocketApi.get_transfer_history_by_flag(accountId, nLimit,flag);
     }
 
-    public List<Asset> list_assets(String strLowerBound, int nLimit) throws NetworkStatusException {
-        return mWebsocketApi.list_assets(strLowerBound, nLimit);
-    }
-
     public List<asset_object> list_assets_obj(String strLowerBound, int nLimit) throws NetworkStatusException {
-        return mWebsocketApi.list_assets_obj(strLowerBound, nLimit);
+        return mWebsocketApi.list_assets(strLowerBound, nLimit);
     }
 
     public List<asset_object> get_assets(List<object_id<asset_object>> listAssetObjectId) throws NetworkStatusException {
@@ -425,7 +415,7 @@ public class wallet_api {
         return mWebsocketApi.lookup_asset_symbols_rate(strAssetSymbol);
     }
 
-    public int import_brain_key(String strAccountNameOrId, String strBrainKey) throws NetworkStatusException {
+    public int import_brain_key(String strAccountNameOrId, String strBrainKey) throws NetworkStatusException,NoSuchAlgorithmException,UnsupportedEncodingException {
         account_object accountObject = get_account(strAccountNameOrId);
         if (accountObject == null) {
             return ErrorCode.ERROR_NO_ACCOUNT_OBJECT;
@@ -433,23 +423,29 @@ public class wallet_api {
 
         Map<types.public_key_type, types.private_key_type> mapPublic2Private = new HashMap<>();
         for (int i = 0; i < 10; ++i) {
-            BrainKey brainKey = new BrainKey(strBrainKey, i);
-            ECKey ecKey = brainKey.getPrivateKey();
+            String encoded = String.format("%s %d", strBrainKey, i);
+            /*
+             根据速记词生成私钥
+             */
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
+            byte[] bytes = md.digest(encoded.getBytes("UTF-8"));
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            byte[] result = sha256.digest(bytes);
+            ECKey ecKey = ECKey.fromPrivate(result);
             private_key privateKey = new private_key(ecKey.getPrivKeyBytes());
             types.private_key_type privateKeyType = new types.private_key_type(privateKey);
             types.public_key_type publicKeyType = new types.public_key_type(privateKey.get_public_key());
 
-            if (accountObject.active.is_public_key_type_exist(publicKeyType) == false &&
-                    accountObject.owner.is_public_key_type_exist(publicKeyType) == false &&
-                    accountObject.options.memo_key.compare(publicKeyType) == false) {
+            if (!accountObject.active.is_public_key_type_exist(publicKeyType) &&
+                    !accountObject.owner.is_public_key_type_exist(publicKeyType) &&
+                    !accountObject.options.memo_key.compare(publicKeyType)) {
                 continue;
             }
             mapPublic2Private.put(publicKeyType, privateKeyType);
         }
 
-        if (mapPublic2Private.isEmpty() == true) {
-            return ErrorCode.ERROR_IMPORT_NOT_MATCH_PRIVATE_KEY;
-        }
+        if (mapPublic2Private.isEmpty()) return ErrorCode.ERROR_IMPORT_NOT_MATCH_PRIVATE_KEY;
+
 
         mWalletObject.update_account(accountObject);
 
@@ -466,14 +462,11 @@ public class wallet_api {
 
     public int import_key(String account_name_or_id,
                           String wif_key) throws NetworkStatusException {
-        if (!(is_locked() == false && is_new() == false)) {
+        if ((is_locked() && !is_new())) {
             return -1;
         }
 
         types.private_key_type privateKeyType = new types.private_key_type(wif_key);
-
-        if (privateKeyType == null)
-            return -1;
 
         public_key publicKey = privateKeyType.getPrivateKey().get_public_key();
         types.public_key_type publicKeyType = new types.public_key_type(publicKey);
@@ -490,9 +483,9 @@ public class wallet_api {
         }
 
         account_object accountObject = listAccountObject.get(0);*/
-        if (accountObject.active.is_public_key_type_exist(publicKeyType) == false &&
-                accountObject.owner.is_public_key_type_exist(publicKeyType) == false &&
-                accountObject.options.memo_key.compare(publicKeyType) == false) {
+        if (!accountObject.active.is_public_key_type_exist(publicKeyType) &&
+                !accountObject.owner.is_public_key_type_exist(publicKeyType) &&
+                !accountObject.options.memo_key.compare(publicKeyType)) {
             return -1;
         }
 
@@ -1555,11 +1548,6 @@ public class wallet_api {
         if (asset.bitasset_data_id == null) return null;
 
         return mWebsocketApi.get_object(asset.bitasset_data_id.toString());
-    }
-
-    public full_account get_full_account(String name, boolean subscribe)
-            throws NetworkStatusException, JSONException {
-        return mWebsocketApi.get_full_account(name, subscribe);
     }
 
     public AllHistory get_all_history(String baseSymbolId, String qouteSymbolId, int nLimit)

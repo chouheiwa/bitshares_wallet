@@ -1,6 +1,6 @@
 package com.borderless.wallet.socket.chain;
 
-import org.apache.http.util.TextUtils;
+import com.borderless.wallet.utils.TextUtils;
 
 /**
  * Created by Administrator on 2017/11/24.

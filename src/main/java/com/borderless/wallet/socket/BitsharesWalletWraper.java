@@ -6,11 +6,11 @@ import com.borderless.wallet.net.model.HistoryResponseModel;
 import com.borderless.wallet.socket.chain.*;
 import com.borderless.wallet.socket.common.ErrorCode;
 import com.borderless.wallet.socket.market.MarketTicker;
-import de.bitsharesmunich.graphenej.Address;
-import de.bitsharesmunich.graphenej.Asset;
-import de.bitsharesmunich.graphenej.FileBin;
-import de.bitsharesmunich.graphenej.models.backup.LinkedAccount;
-import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
+//import de.bitsharesmunich.graphenej.Address;
+//import de.bitsharesmunich.graphenej.Asset;
+//import de.bitsharesmunich.graphenej.FileBin;
+//import de.bitsharesmunich.graphenej.models.backup.LinkedAccount;
+//import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
 import org.json.JSONException;
 
 import java.io.File;
@@ -187,47 +187,6 @@ public class BitsharesWalletWraper {
         return 0;
     }
 
-    public int import_file_bin(String strPassword, String strFilePath) {
-        File file = new File(strFilePath);
-        if (file.exists() == false) {
-            return ErrorCode.ERROR_FILE_NOT_FOUND;
-        }
-
-        int nSize = (int)file.length();
-
-        final byte[] byteContent = new byte[nSize];
-
-        FileInputStream fileInputStream;
-        try {
-            fileInputStream = new FileInputStream(file);
-            fileInputStream.read(byteContent, 0, byteContent.length);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return ErrorCode.ERROR_FILE_NOT_FOUND;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ErrorCode.ERROR_FILE_READ_FAIL;
-        }
-
-        WalletBackup walletBackup = FileBin.deserializeWalletBackup(byteContent, strPassword);
-        if (walletBackup == null) {
-            return ErrorCode.ERROR_FILE_BIN_PASSWORD_INVALID;
-        }
-
-        String strBrainKey = walletBackup.getWallet(0).decryptBrainKey(strPassword);
-        //LinkedAccount linkedAccount = walletBackup.getLinkedAccounts()[0];
-
-        int nRet = ErrorCode.ERROR_IMPORT_NOT_MATCH_PRIVATE_KEY;
-        for (LinkedAccount linkedAccount : walletBackup.getLinkedAccounts()) {
-            nRet = import_brain_key(linkedAccount.getName(), strBrainKey);
-            if (nRet == 0) {
-                break;
-            }
-        }
-
-        return nRet;
-    }
-
     public int unlock(String strPassword) {
         return mWalletApi.unlock(strPassword);
     }
@@ -299,11 +258,6 @@ public class BitsharesWalletWraper {
         return listAsset;
 
     }
-
-    public List<Asset> list_assets(String strLowerBound, int nLimit) throws Exception {
-        return mWalletApi.list_assets(strLowerBound, nLimit);
-    }
-
     public List<asset_object> list_assets_obj(String strLowerBound, int nLimit) throws Exception {
         return mWalletApi.list_assets_obj(strLowerBound, nLimit);
     }
@@ -321,7 +275,7 @@ public class BitsharesWalletWraper {
             }
         }
 
-        if (listRequestId.isEmpty() == false) {
+        if (!listRequestId.isEmpty()) {
             List<asset_object> listAssetObject = mWalletApi.get_assets(listRequestId);
             for (asset_object assetObject : listAssetObject) {
                 mapId2Object.put(assetObject.id, assetObject);
@@ -357,7 +311,7 @@ public class BitsharesWalletWraper {
             }
         }
 
-        if (listRequestId.isEmpty() == false) {
+        if (!listRequestId.isEmpty()) {
             List<account_object> listAccountObject = mWalletApi.get_accounts(listRequestId);
             for (account_object accountObject : listAccountObject) {
                 mapId2Object.put(accountObject.id, accountObject);
@@ -371,8 +325,7 @@ public class BitsharesWalletWraper {
     public signed_transaction transfer(String strFrom, String strTo, String strAmount, String strAssetSymbol,
                                        String strMemo, String amount_to_fee, String symbol_to_fee)
             throws Exception {
-        signed_transaction signedTransaction = mWalletApi.transfer(strFrom,  strTo, strAmount, strAssetSymbol, strMemo, amount_to_fee, symbol_to_fee);
-        return signedTransaction;
+        return mWalletApi.transfer(strFrom,  strTo, strAmount, strAssetSymbol, strMemo, amount_to_fee, symbol_to_fee);
     }
 
     public signed_transaction borrow_asset(String amount_to_borrow,String asset_symbol,String amount_to_collateral,int index) throws Exception {
@@ -423,7 +376,7 @@ public class BitsharesWalletWraper {
                     dateObjectEnd
             );
 
-            if (listBucketObject.isEmpty() == false) {
+            if (!listBucketObject.isEmpty()) {
                 //bucket_object bucketObject = listBucketObject.get(listBucketObject.size() - 1);
                 mapId2BucketObject.put(objectId, listBucketObject);
             }
@@ -473,18 +426,6 @@ public class BitsharesWalletWraper {
             //List<operation_history_object> operationHistoryObjectList = BitsharesWalletWraper.getInstance().get_history(bRefresh);
             HashSet<object_id<account_object>> hashSetObjectId = new HashSet<object_id<account_object>>();
             HashSet<object_id<asset_object>> hashSetAssetObject = new HashSet<object_id<asset_object>>();
-
-            //List<Pair<operation_history_object, Date>> listHistoryObjectTime = new ArrayList<Pair<operation_history_object, Date>>();
-//            for (operation_history_object historyObject : operationHistoryObjectList) {
-//                block_header blockHeader = BitsharesWalletWraper.getInstance().get_block_header(historyObject.block_num);
-//                listHistoryObjectTime.add(new Pair<>(historyObject, blockHeader.timestamp));
-//                if (historyObject.op.nOperationType <= operations.ID_CREATE_ACCOUNT_OPERATION) {
-//                    operations.base_operation operation = (operations.base_operation)historyObject.op.operationContent;
-//                    hashSetObjectId.addAll(operation.get_account_id_list());
-//                    hashSetAssetObject.addAll(operation.get_asset_id_list());
-//                }
-//            }
-
             // 保证默认数据一直存在
             hashSetAssetObject.add(new object_id<asset_object>(0, asset_object.class));
 
@@ -520,8 +461,7 @@ public class BitsharesWalletWraper {
             mBitshareData = new BitshareData();
             mBitshareData.assetObjectCurrency = currencyObject;
             mBitshareData.listBalances = listBalances;
-            //mBitshareData.listHistoryObject = listHistoryObjectTime;
-            //mBitshareData.mapId2AssetObject = mapId2AssetObject;
+;
             mBitshareData.mapId2AccountObject = mapId2AccountObject;
             mBitshareData.mapAssetId2Bucket = mapAssetId2Bucket;
 
@@ -599,10 +539,6 @@ public class BitsharesWalletWraper {
         return mWalletApi.decrypt_memo_message(memoData);
     }
 
-    public full_account get_full_account(String name, boolean subscribe) throws Exception, JSONException {
-        return mWalletApi.get_full_account(name, subscribe);
-    }
-
     public List<full_account_object> get_full_accounts(List<String> names, boolean subscribe)
             throws Exception {
         return mWalletApi.get_full_accounts(names, subscribe);
@@ -666,55 +602,9 @@ public class BitsharesWalletWraper {
                 e.printStackTrace();
             }
 
-            if (suggestPublicKey.equals("") || suggestPrivateKey.equals("")){
-                return false;
-            }else {
-                return true;
-            }
+            return (suggestPublicKey.equals("") || suggestPrivateKey.equals(""));
     }
 
-
-    public String getSignMessage(String public_key, String accountName, String sign){
-        String signMessage = "";
-        account_object myAccount = null;
-        //获取账户 private key
-        BitsharesWalletWraper bww = new BitsharesWalletWraper();
-        try {
-            myAccount = bww.get_account_object(accountName);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //网络异常
-        if (null == myAccount) {
-            return signMessage;
-        }
-        types.public_key_type publicKeyType =  myAccount.owner.get_keys().get(0);
-        types.private_key_type privateKey = bww.get_wallet_hash().get(publicKeyType);
-
-        if(privateKey == null || privateKey.getPrivateKey() == null){
-            return signMessage;
-        }
-
-        //请求public key
-        memo_data memo = new memo_data();
-        memo.from = myAccount.options.memo_key;
-        memo.to = myAccount.options.memo_key;
-
-
-        Address address = null;
-        try {
-            address = new Address(public_key);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return signMessage;
-        }
-        public_key publicKey = new public_key(address.getPublicKey().toBytes());
-        //加密
-        memo.set_message(privateKey.getPrivateKey(), publicKey, sign, 1);
-        signMessage = memo.get_message_data();
-
-        return signMessage;
-    }
     public List<account_object> lookup_account_names(String strAccountName) throws Exception {
         return mWalletApi.lookup_account_names(strAccountName);
     }

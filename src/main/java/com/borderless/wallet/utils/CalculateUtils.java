@@ -1,7 +1,5 @@
 package com.borderless.wallet.utils;
 
-import org.apache.http.util.TextUtils;
-
 import java.math.BigDecimal;
 
 /**

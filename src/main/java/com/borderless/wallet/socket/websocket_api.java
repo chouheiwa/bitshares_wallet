@@ -1,15 +1,10 @@
 package com.borderless.wallet.socket;
 
-import com.borderless.wallet.utils.GsonUtil;
+import com.borderless.wallet.utils.*;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import com.borderless.wallet.constants.OwnerInfoConstant;
-import com.borderless.wallet.utils.CalculateUtils;
-import com.borderless.wallet.utils.NumberUtils;
-import com.borderless.wallet.utils.TimeUtils;
 import com.borderless.wallet.net.model.AllHistory;
 import com.borderless.wallet.net.model.HistoryResponseModel;
 import com.borderless.wallet.socket.chain.*;
@@ -17,12 +12,8 @@ import com.borderless.wallet.socket.exception.NetworkStatusException;
 import com.borderless.wallet.socket.fc.crypto.sha256_object;
 import com.borderless.wallet.socket.market.MarketTicker;
 import com.borderless.wallet.socket.market.OrderBook;
-import de.bitsharesmunich.graphenej.*;
-import de.bitsharesmunich.graphenej.models.WitnessResponse;
 import okhttp3.*;
-import okhttp3.internal.ws.RealWebSocket;
 import okio.ByteString;
-import org.apache.http.util.TextUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,9 +29,9 @@ import static com.borderless.wallet.socket.common.ErrorCode.ERROR_CONNECT_SERVER
 
 public class websocket_api extends WebSocketListener {
     protected  final Logger log = LoggerFactory.getLogger(this.getClass());
-    private int _nDatabaseId = 2;
-    private int _nHistoryId = 3;
-    private int _nBroadcastId = 4;
+    private int _nDatabaseId = -1;
+    private int _nHistoryId = -1;
+    private int _nBroadcastId = -1;
 
     private OkHttpClient mOkHttpClient;
     private WebSocket mWebsocket;
@@ -101,8 +92,6 @@ public class websocket_api extends WebSocketListener {
             mType = type;
         }
 
-
-
         public void processTextToObject(String strText) {
             try {
                 strResponse = strText;
@@ -114,7 +103,7 @@ public class websocket_api extends WebSocketListener {
                 e.printStackTrace();
                 strError = e.getMessage();
                 strResponse = strText;
-                System.out.println("strText = [" + strText + "]" +e.getMessage() );
+                System.out.println(strText + "\n" +e.getMessage() );
             } catch (Exception e) {
                 e.printStackTrace();
                 strError = e.getMessage();
@@ -192,8 +181,6 @@ public class websocket_api extends WebSocketListener {
 
     @Override
     public void onMessage(WebSocket webSocket, String text) {
-        //super.onMessage(webSocket, text);
-
         try {
             long endTime = System.currentTimeMillis();
             log.info("接收Send请求" + (endTime - startTime));
@@ -262,14 +249,6 @@ public class websocket_api extends WebSocketListener {
             nRet = ERROR_CONNECT_SERVER_FAILD;
         }
 
-//        try {
-//            asset_object base = lookup_asset_symbols("BTS");
-//            asset_object quote = lookup_asset_symbols("CNY");
-//            subscribe_to_market(base.id, quote.id);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
         if (nRet != 0) {
             mWebsocket.close(1000, "");
             mWebsocket = null;
@@ -288,14 +267,6 @@ public class websocket_api extends WebSocketListener {
             mWebsocket.close(1000, "Close");
         }
 
-        //free cli shared_ptr
-//        if (bUsedJniInterface) {
-//            try {
-//                CliCmdExecutor.DistoryCli();
-//            } catch (JNIException e) {
-//                e.printStackTrace();
-//            }
-//        }
         mOkHttpClient = null;
         mWebsocket = null;
         mnConnectStatus = WEBSOCKET_CONNECT_INVALID;
@@ -352,6 +323,7 @@ public class websocket_api extends WebSocketListener {
     }
 
     private int get_database_api_id() throws NetworkStatusException {
+        if (_nDatabaseId != -1) return _nDatabaseId;
         int id = get_websocket_bitshares_api_id("database");
         if (-1 != id) {
             _nDatabaseId = id;
@@ -364,6 +336,7 @@ public class websocket_api extends WebSocketListener {
     }
 
     private int get_history_api_id() throws NetworkStatusException {
+        if (_nHistoryId != -1) return _nHistoryId;
         int id = get_websocket_bitshares_api_id("history");
         if (-1 != id) {
             _nHistoryId = id;
@@ -376,6 +349,7 @@ public class websocket_api extends WebSocketListener {
     }
 
     private int get_broadcast_api_id() throws NetworkStatusException {
+        if (_nBroadcastId != -1) return _nBroadcastId;
         int id = get_websocket_bitshares_api_id("network_broadcast");
         if ( -1 != id) {
             _nBroadcastId = id;
@@ -804,37 +778,7 @@ public class websocket_api extends WebSocketListener {
         }
     }
 
-    public List<Asset> list_assets(String strLowerBound, int nLimit) throws NetworkStatusException {
-        _nDatabaseId = get_database_api_id();
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("list_assets");
-
-        List<Object> listAssetsParam = new ArrayList<>();
-        listAssetsParam.add(strLowerBound);
-        listAssetsParam.add(nLimit);
-        callObject.params.add(listAssetsParam);
-
-        ReplyObjectProcess<Reply<List<asset_object>>> replyObjectProcess =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<asset_object>>>(){}.getType());
-        Reply<List<asset_object>> replyObject = sendForReply(callObject, replyObjectProcess);
-        if (replyObject == null) {
-            List<Asset> Obj = new ArrayList<Asset>();
-            return Obj;
-        } else {
-            String response =  replyObjectProcess.strResponse;
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            Type LookupAssetSymbolsResponse = new TypeToken<WitnessResponse<List<Asset>>>(){}.getType();
-            gsonBuilder.registerTypeAdapter(Asset.class, new Asset.AssetDeserializer());
-            WitnessResponse<List<Asset>> witnessResponse = gsonBuilder.create().fromJson(response, LookupAssetSymbolsResponse);
-            return witnessResponse.result;
-        }
-    }
-
-    public List<asset_object> list_assets_obj(String strLowerBound, int nLimit) throws NetworkStatusException {
+    public List<asset_object> list_assets(String strLowerBound, int nLimit) throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
         Call callObject = new Call();
 
@@ -1005,7 +949,6 @@ public class websocket_api extends WebSocketListener {
             return replyObject.result;
         }
     }
-
     //查询区块信息
     public block_object get_block(int nBlockNumber) throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
@@ -1216,122 +1159,6 @@ public class websocket_api extends WebSocketListener {
         sendForReplyImpl(callObject, replyObject);
     }
 
-    public full_account get_full_account(String name, boolean subscribe) throws NetworkStatusException, JSONException {
-        _nDatabaseId = get_database_api_id();
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("get_full_accounts");
-        List<Object> listParams = new ArrayList<>();
-        List<String> names = new ArrayList<>(1);
-        names.add(name);
-        listParams.add(names);
-        listParams.add(subscribe);
-        callObject.params.add(listParams);
-        String rpcJson;
-        full_account fullAccountObj = new full_account();
-        ReplyObjectProcess<Reply<full_account_object>> replyObject =
-                    new ReplyObjectProcess<>(new TypeToken<Reply<full_account_object>>() {}.getType());
-        try {
-            Reply<full_account_object>  replay =  sendForReply(callObject, replyObject);
-            if (replay == null) {
-                rpcJson = replyObject.getResponse();
-                if (rpcJson == null)
-                   return null;
-            } else {
-                rpcJson = replyObject.getResponse();
-            }
-        } catch (JsonSyntaxException e) {
-             rpcJson = replyObject.getResponse();
-        } catch (Exception e) {
-             rpcJson = replyObject.getResponse();
-        }
-        if (rpcJson == null || rpcJson.isEmpty()) {
-            return null;
-        }
-        JSONObject jsonObject = new JSONObject(rpcJson);
-
-        if (jsonObject != null) {
-            account_object accountObj = new account_object();
-            List<limit_order_object> limit_orders = new ArrayList<limit_order_object>();
-            JSONArray jsonArray = jsonObject.optJSONArray("result");
-            if (jsonArray != null) {
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONArray subArrayObj = jsonArray.optJSONArray(i);
-                    if ( subArrayObj.length() > 0) {
-                        String userName = subArrayObj.getString(0);
-                        JSONObject objUser = subArrayObj.getJSONObject(1);
-                        String sAccountStr = objUser.getString("account");
-                        JSONArray jLimitOrdersArray = objUser.getJSONArray("limit_orders");
-                        if (jLimitOrdersArray.length() > 0) {
-                            List<LimitOrder> ordersList = new ArrayList<LimitOrder>();
-                            for (int j = 0; j < jLimitOrdersArray.length(); j++) {
-                                String sLimitOrders = jLimitOrdersArray.getString(j);
-                                JSONObject limitObj = jLimitOrdersArray.getJSONObject(j);
-                                String assetId = limitObj.getString("id");
-                                String expiration = limitObj.getString("expiration");
-                                String seller = limitObj.getString("seller");
-                                long for_sale = limitObj.getLong("for_sale");
-                                JSONObject sell_price = limitObj.getJSONObject("sell_price");
-                                JSONObject base = sell_price.getJSONObject("base");
-                                long base_amount = base.getLong("amount");
-                                String base_asset_id = base.getString("asset_id");
-                                JSONObject quote = sell_price.getJSONObject("quote");
-                                String quote_amount = quote.getString("amount");
-                                String quote_asset_id = quote.getString("asset_id");
-                                String deferred_fee = limitObj.getString("deferred_fee");
-
-                                LimitOrder limtOder = new LimitOrder(assetId);
-                                UserAccount user = new UserAccount(seller);
-                                limtOder.setSeller(user);
-                                limtOder.setExpiration(expiration);
-                                limtOder.setForSale(for_sale);
-                                Price sellPrice = new Price();
-                                Asset baseAsset = new Asset(base_asset_id);
-                                sellPrice.base = new AssetAmount(UnsignedLong.valueOf(base_amount),baseAsset);
-                                Asset quoteAsset = new Asset(quote_asset_id);
-                                sellPrice.quote = new AssetAmount(UnsignedLong.valueOf(quote_amount),quoteAsset);
-                                limtOder.setSellPrice(sellPrice);
-                                ordersList.add(limtOder);
-                            }
-                            fullAccountObj.limit_orders = ordersList;
-                        }
-
-                        JSONArray jCallOrderArray = objUser.getJSONArray("call_orders");
-                        if (jCallOrderArray.length() > 0) {
-                            List<CallOrder> ordersList = new ArrayList<CallOrder>();
-                            for (int j = 0; j < jCallOrderArray.length(); j++) {
-                                CallOrder callder = new CallOrder();
-                                String sLimitOrders = jCallOrderArray.getString(j);
-                                JSONObject callObj = jCallOrderArray.getJSONObject(j);
-                                String collateral = callObj.getString("collateral");
-                                String debt = callObj.getString("debt");
-                                JSONObject call_price = callObj.getJSONObject("call_price");
-                                JSONObject base = call_price.getJSONObject("base");
-                                String base_amount = base.getString("amount");
-                                String base_asset_id = base.getString("asset_id");
-                                JSONObject quote = call_price.getJSONObject("quote");
-                                String quote_amount = quote.getString("amount");
-                                String quote_asset_id = quote.getString("asset_id");
-                                callder.setBase_amount(base_amount+"");
-                                callder.setBase_asset_id(base_asset_id);
-                                callder.setQuote_amount(quote_amount+"");
-                                callder.setQuote_asset_id(quote_asset_id);
-                                callder.setCollateral(collateral);
-                                callder.setDebt(debt);
-                                ordersList.add(callder);
-                            }
-                            fullAccountObj.call_orders = ordersList;
-                        }
-                    }
-                }
-            }
-        }
-        return fullAccountObj;
-    }
-
     public List<full_account_object> get_full_accounts(List<String> names, boolean subscribe)
             throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
@@ -1501,83 +1328,6 @@ public class websocket_api extends WebSocketListener {
         }
 
         return sendForReplyImpl(callObject, replyObjectProcess);
-    }
-
-    private String makeJsonFromObj(String jsonMessage) {
-        String jsonData = "{\"id\":";
-        try {
-            JSONObject jsonObject = new JSONObject(jsonMessage);
-            if (jsonObject != null) {
-                String strId = jsonObject.getString("id");
-                jsonData += strId +",";
-                jsonData += "\"method\":\"call\",";
-                jsonData += "\"params\":[4,\"broadcast_transaction\",[{\"signatures\": [\"";
-                JSONArray jparams = jsonObject.getJSONArray("params");
-                if (jparams!= null && jparams.length()>0) {
-                    JSONArray transArray = jparams.getJSONArray(2);
-                    if (transArray != null && transArray.length() >0) {
-                        JSONArray signArray = transArray.getJSONObject(0).getJSONArray("signatures");
-                        if (signArray != null && signArray.length() >0) {
-                            String signatures = signArray.getString(0);
-                            jsonData += signatures;
-                            jsonData += "\"],";
-                            jsonData +="\"expiration\": \"";
-                            String expiration = transArray.getJSONObject(0).getString("expiration");
-                            jsonData += expiration;
-                            jsonData +="\", \"extensions\": [],\"operations\": [[5,{\"active\":{\"account_auths\": [],\"address_auths\": [],\"key_auths\": [[";
-                            JSONArray jOperations = transArray.getJSONObject(0).getJSONArray("operations");
-                            JSONArray jOperation = jOperations.getJSONArray(0);
-                            JSONObject Jactive =  jOperation.getJSONObject(1).getJSONObject("active");
-                            String keyAuths = Jactive.getString("key_auths");
-//                            jsonData += "{\"";
-                            jsonData += keyAuths.substring(1,keyAuths.length()-3);
-                            jsonData +=",";
-                            jsonData +="1";
-                            jsonData +="]],";
-                            jsonData +="\"weight_threshold\": 1},";
-                            jsonData +=" \"name\": \"";
-                            String username=jOperation.getJSONObject(1).getString("name");
-                            jsonData += username;
-                            jsonData += "\",\"options\":{\"memo_key\": \"";
-                            JSONObject joptions = jOperation.getJSONObject(1).getJSONObject("options");
-                            String options = joptions.getString("memo_key");
-                            jsonData += options;
-                            jsonData += "\"}, \"owner\": {\"account_auths\": [],\"address_auths\": [],\"key_auths\": [[";
-                            JSONObject jowner = jOperation.getJSONObject(1).getJSONObject("owner");
-                            String keyOwnerAuths = jowner.getString("key_auths");
-                            //jsonData += keyOwnerAuths;
-//                            jsonData +="\"";
-                            jsonData += keyOwnerAuths.substring(1,keyOwnerAuths.length()-3);
-                            jsonData +=",";
-                            jsonData +="1";
-                            jsonData += "]],";
-                            jsonData +="\"weight_threshold\": 1},";
-                            jsonData +=" \"referrer\": \"";
-                            String referrer = jOperation.getJSONObject(1).getString("referrer");
-                            jsonData += referrer;
-                            jsonData +="\",\"referrer_percent\": \"";
-                            String refpercent = jOperation.getJSONObject(1).getString("referrer_percent");
-                            jsonData += refpercent;
-                            jsonData += "\",\"registrar\": \"";
-                            String registrar = jOperation.getJSONObject(1).getString("registrar");
-                            jsonData += registrar;
-                            jsonData +="\"}]],";
-                            jsonData += "\"ref_block_num\":";
-                            String ref_block = transArray.getJSONObject(0).getString("ref_block_num");
-                            jsonData += ref_block;
-                            jsonData += ",\"ref_block_prefix\":";
-                            String ref_block_prefix =  transArray.getJSONObject(0).getString("ref_block_prefix");
-                            jsonData += ref_block_prefix;
-                            jsonData += "}]]}";
-                        }
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return jsonData;
     }
 
     private <T> Reply<T> sendJsonForReplyImpl(Call callObject,

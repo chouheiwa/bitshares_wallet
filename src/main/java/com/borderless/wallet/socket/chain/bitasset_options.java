@@ -20,7 +20,7 @@ public class bitasset_options {
 
     public short maximum_force_settlement_volume = GRAPHENE_DEFAULT_FORCE_SETTLEMENT_MAX_VOLUME;
 
-    public object_id<asset_object> short_backing_asset;
+    public object_id<asset_object> short_backing_asset = object_id.create_from_string("1.3.0");
 
     public Set extensions = new HashSet();
 
@@ -33,7 +33,8 @@ public class bitasset_options {
 
         baseEncoder.write(raw_object.get_byte_array(force_settlement_delay_sec));
 
-        raw_object.pack(baseEncoder,UnsignedInteger.fromIntBits(force_settlement_offset_percent));
+        baseEncoder.write(raw_object.get_byte_array(force_settlement_offset_percent));
+//        raw_object.pack(baseEncoder,UnsignedInteger.fromIntBits(force_settlement_offset_percent));
 
 //        raw_object.pack(baseEncoder,UnsignedInteger.fromIntBits(maximum_force_settlement_volume));
         baseEncoder.write(raw_object.get_byte_array(maximum_force_settlement_volume));
