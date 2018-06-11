@@ -98,15 +98,15 @@ public class sha256_object {
 
         @Override
         public void write(byte[] data) {
-            String final_data = "";
-
-            for (int i = 0;i < data.length; i ++) {
-
-
-                final_data += String.format("%X ",(int) (data[i] & 0xff));
-            }
-
-            System.out.println("write byte[] " + final_data);
+//            String final_data = "";
+//
+//            for (int i = 0;i < data.length; i ++) {
+//
+//
+//                final_data += String.format("%X ",(int) (data[i] & 0xff));
+//            }
+//
+//            System.out.println("write byte[] " + final_data);
 
             digest.update(data, 0, data.length);
             messageDigest.update(data);
@@ -114,22 +114,22 @@ public class sha256_object {
 
         @Override
         public void write(byte[] data, int off, int len) {
-            String final_data = "";
-
-            for (int i = 0;i < data.length; i ++) {
-                final_data = final_data + String.format("%X ", (int) (data[i] & 0xff));
-            }
-
-            System.out.println("write byte[] off len " + final_data);
+//            String final_data = "";
+//
+//            for (int i = 0;i < data.length; i ++) {
+//                final_data = final_data + String.format("%X ", (int) (data[i] & 0xff));
+//            }
+//
+//            System.out.println("write byte[] off len " + final_data);
             digest.update(data, off, len);
             messageDigest.update(data, off, len);
         }
 
         @Override
         public void write(byte data) {
-            String final_data = String.format("%X ",(int) (data & 0xff));
-
-            System.out.println("write byte " + final_data);
+//            String final_data = String.format("%X ",(int) (data & 0xff));
+//
+//            System.out.println("write byte " + final_data);
             digest.update(data);
             messageDigest.update(data);
         }
@@ -138,7 +138,7 @@ public class sha256_object {
             sha256_object sha256Object = new sha256_object();
             digest.doFinal(sha256Object.hash, 0);
 
-            System.out.println(sha256Object.toString());
+//            System.out.println(sha256Object.toString());
 
             return sha256Object;
         }

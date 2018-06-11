@@ -1,7 +1,6 @@
 package com.borderless.wallet.socket.fc.crypto;
 
 import com.google.common.io.BaseEncoding;
-import org.jetbrains.annotations.Nullable;
 import org.spongycastle.crypto.digests.SHA512Digest;
 
 import java.util.Arrays;
@@ -10,7 +9,6 @@ import java.util.Arrays;
 public class sha512_object {
     public byte[] hash = new byte[64];
 
-    @Nullable
     public static sha512_object create_from_string(String strPassword) {
         SHA512Digest digest = new SHA512Digest();
         sha512_object sha512Object ;

@@ -1,5 +1,7 @@
 package com.borderless.wallet.socket;
 
+import com.borderless.wallet.socket.websocketClient.websocketClient;
+import com.borderless.wallet.socket.websocketClient.websocketInterface;
 import com.borderless.wallet.utils.*;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
@@ -12,7 +14,7 @@ import com.borderless.wallet.socket.exception.NetworkStatusException;
 import com.borderless.wallet.socket.fc.crypto.sha256_object;
 import com.borderless.wallet.socket.market.MarketTicker;
 import com.borderless.wallet.socket.market.OrderBook;
-import okhttp3.*;
+//import okhttp3.*;
 import okio.ByteString;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,19 +24,21 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.borderless.wallet.socket.common.ErrorCode.ERROR_CONNECT_SERVER_FAILD;
 
-public class websocket_api extends WebSocketListener {
+public class websocket_api implements websocketInterface {
     protected  final Logger log = LoggerFactory.getLogger(this.getClass());
     private int _nDatabaseId = -1;
     private int _nHistoryId = -1;
     private int _nBroadcastId = -1;
 
-    private OkHttpClient mOkHttpClient;
-    private WebSocket mWebsocket;
+    private websocketClient mWebsocket;
+//    private OkHttpClient mOkHttpClient;
+//    private WebSocket mWebsocket;
 
     private int mnConnectStatus = WEBSOCKET_CONNECT_INVALID;
     private int mnCliConnectStatus = WEBSOCKET_CONNECT_INVALID;
@@ -46,6 +50,52 @@ public class websocket_api extends WebSocketListener {
     private AtomicInteger mnCallId = new AtomicInteger(1);
     private HashMap<Integer, IReplyObjectProcess> mHashMapIdToProcess = new HashMap<>();
     private String gRespJson;
+
+    @Override
+    public void onOpen() {
+        synchronized (mWebsocket) {
+            mnConnectStatus = WEBSOCKET_CONNECT_SUCCESS;
+            mWebsocket.notify();
+        }
+    }
+
+    @Override
+    public void onMessage(String resultMsg) {
+        try {
+            long endTime = System.currentTimeMillis();
+            log.info("接收Send请求" + (endTime - startTime));
+            Gson gson = new Gson();
+            ReplyBase replyObjectBase = gson.fromJson(resultMsg, ReplyBase.class);
+
+            IReplyObjectProcess iReplyObjectProcess = null;
+            synchronized (mHashMapIdToProcess) {
+                if (mHashMapIdToProcess.containsKey(replyObjectBase.id)) {
+                    iReplyObjectProcess = mHashMapIdToProcess.get(replyObjectBase.id);
+                    log.info("接收Send请求  mapid=" + replyObjectBase.id);
+                }
+            }
+
+            if (iReplyObjectProcess != null) {
+                iReplyObjectProcess.processTextToObject(resultMsg+"\t\n");
+            } else {
+
+            }
+        } catch (JsonSyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        if (e instanceof IOException) {  // 出现io错误
+            if (mWebsocket != null){
+                synchronized (mWebsocket) {
+                    mnConnectStatus = WEBSOCKET_CONNECT_FAIL;
+                    mWebsocket.notify();
+                }
+            }
+        }
+    }
 
     class WebsocketError {
         int code;
@@ -70,8 +120,6 @@ public class websocket_api extends WebSocketListener {
         int id;
         String jsonrpc;
     }
-
-
 
     private interface IReplyObjectProcess<T> {
         void processTextToObject(String strText);
@@ -144,67 +192,6 @@ public class websocket_api extends WebSocketListener {
         }
     }
 
-    @Override
-    public void onClosed(WebSocket webSocket, int code, String reason) {
-        super.onClosed(webSocket, code, reason);
-    }
-
-    @Override
-    public void onClosing(WebSocket webSocket, int code, String reason) {
-        super.onClosing(webSocket, code, reason);
-    }
-
-    @Override
-    public void onMessage(WebSocket webSocket, ByteString bytes) {
-        super.onMessage(webSocket, bytes);
-    }
-
-    @Override
-    public void onOpen(WebSocket webSocket, Response response) {
-        synchronized (mWebsocket) {
-            mnConnectStatus = WEBSOCKET_CONNECT_SUCCESS;
-            mWebsocket.notify();
-        }
-    }
-
-    @Override
-    public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-        if (t instanceof IOException) {  // 出现io错误
-            if (mWebsocket != null){
-                synchronized (mWebsocket) {
-                    mnConnectStatus = WEBSOCKET_CONNECT_FAIL;
-                    mWebsocket.notify();
-                }
-            }
-        }
-    }
-
-    @Override
-    public void onMessage(WebSocket webSocket, String text) {
-        try {
-            long endTime = System.currentTimeMillis();
-            log.info("接收Send请求" + (endTime - startTime));
-            Gson gson = new Gson();
-            ReplyBase replyObjectBase = gson.fromJson(text, ReplyBase.class);
-
-            IReplyObjectProcess iReplyObjectProcess = null;
-            synchronized (mHashMapIdToProcess) {
-                if (mHashMapIdToProcess.containsKey(replyObjectBase.id)) {
-                    iReplyObjectProcess = mHashMapIdToProcess.get(replyObjectBase.id);
-                    log.info("接收Send请求  mapid=" + replyObjectBase.id);
-                }
-            }
-
-            if (iReplyObjectProcess != null) {
-                iReplyObjectProcess.processTextToObject(text+"\t\n");
-            } else {
-
-            }
-        } catch (JsonSyntaxException e) {
-            e.printStackTrace();
-        }
-    }
-
     public synchronized int connect(String ws_server) {
         if (mnConnectStatus == WEBSOCKET_ALL_READY) {
             return 0;
@@ -214,12 +201,12 @@ public class websocket_api extends WebSocketListener {
             return ERROR_CONNECT_SERVER_FAILD;
         }
 
-
-        Request request = new Request.Builder().url(strServer).build();
-
-        mOkHttpClient = new OkHttpClient();
-
-        mWebsocket = mOkHttpClient.newWebSocket(request, this);
+        try {
+            mWebsocket = new websocketClient(strServer,this);
+            mWebsocket.connect();
+        } catch (URISyntaxException e) {
+            return ERROR_CONNECT_SERVER_FAILD;
+        }
         synchronized (mWebsocket) {
             if (mnConnectStatus == WEBSOCKET_CONNECT_INVALID) {
                 try {
@@ -266,8 +253,6 @@ public class websocket_api extends WebSocketListener {
         if (mWebsocket != null){
             mWebsocket.close(1000, "Close");
         }
-
-        mOkHttpClient = null;
         mWebsocket = null;
         mnConnectStatus = WEBSOCKET_CONNECT_INVALID;
 
@@ -329,7 +314,7 @@ public class websocket_api extends WebSocketListener {
             _nDatabaseId = id;
         } else {
             close();
-            connect(mWebsocket.request().url().toString());
+            connect(mWebsocket.getURI().toString());
             _nDatabaseId = get_websocket_bitshares_api_id("database");
         }
         return _nDatabaseId;
@@ -342,7 +327,7 @@ public class websocket_api extends WebSocketListener {
             _nHistoryId = id;
         }else {
             close();
-            connect(mWebsocket.request().url().toString());
+            connect(mWebsocket.getURI().toString());
             _nHistoryId = get_websocket_bitshares_api_id("history");
         }
         return _nHistoryId;
@@ -355,7 +340,7 @@ public class websocket_api extends WebSocketListener {
             _nBroadcastId = id;
         }else {
             close();
-            connect(mWebsocket.request().url().toString());
+            connect(mWebsocket.getURI().toString());
             _nBroadcastId = get_websocket_bitshares_api_id("network_broadcast");
         }
         return _nBroadcastId;
@@ -1303,7 +1288,7 @@ public class websocket_api extends WebSocketListener {
 
     private <T> String sendForJsonReply(Call callObject, ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
         if (mWebsocket == null || mnConnectStatus != WEBSOCKET_CONNECT_SUCCESS) {
-            int nRet = connect(mWebsocket.request().url().toString());
+            int nRet = connect(mWebsocket.getURI().toString());
             if (nRet == -1) {
                 return null;
             }
@@ -1314,13 +1299,13 @@ public class websocket_api extends WebSocketListener {
     private <T> Reply<T> sendForReply(Call callObject, ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
         int id = get_websocket_bitshares_api_id("database");
         if (-1 == id) {
-            int nRet = connect(mWebsocket.request().url().toString());
+            int nRet = connect(mWebsocket.getURI().toString());
             if (nRet == -1) {
                 return null;
             }
         }
         if (mWebsocket == null || mnConnectStatus != WEBSOCKET_CONNECT_SUCCESS) {
-            int nRet = connect(mWebsocket.request().url().toString());
+            int nRet = connect(mWebsocket.getURI().toString());
             if (nRet == -1) {
                 //throw new NetworkStatusException("It doesn't connect to the server.");
                 return null;
@@ -1340,11 +1325,8 @@ public class websocket_api extends WebSocketListener {
             mHashMapIdToProcess.put(callObject.id, replyObjectProcess);
         }
         synchronized (replyObjectProcess) {
-            boolean bRet = mWebsocket.send(strMessage);
-            if (bRet == false) {
-             // throw new NetworkStatusException("Failed to send message to server.");
-                return null;
-            }
+            mWebsocket.send(strMessage);
+
             try {
                 replyObjectProcess.wait(2000);
                 Reply<T> replyObject = replyObjectProcess.getReplyObject();
@@ -1373,11 +1355,7 @@ public class websocket_api extends WebSocketListener {
             mHashMapIdToProcess.put( mnCallId.getAndIncrement(), replyObjectProcess);
         }
         synchronized (replyObjectProcess) {
-            boolean bRet = mWebsocket.send(strMessage);
-            if (bRet == false) {
-                // throw new NetworkStatusException("Failed to send message to server.");
-                return null;
-            }
+            mWebsocket.send(strMessage);
             try {
                 replyObjectProcess.wait(2000);
                 String jsonResp = replyObjectProcess.getResponse();
@@ -1404,11 +1382,8 @@ public class websocket_api extends WebSocketListener {
         }
 
         synchronized (replyObjectProcess) {
-            boolean bRet = mWebsocket.send(strMessage);
-            if (bRet == false) {
-               // throw new NetworkStatusException("Failed to send message to server.");
-               return null;
-            }
+            mWebsocket.send(strMessage);
+
             try {
                 replyObjectProcess.wait(2000);
                 String jsonResp = replyObjectProcess.getResponse();
@@ -1437,7 +1412,7 @@ public class websocket_api extends WebSocketListener {
         }
 
         if (mWebsocket == null) {
-            connect(mWebsocket.request().url().toString());
+            connect(mWebsocket.getURI().toString());
             if (mWebsocket == null) {
                 //TODO no network
                 return null;
@@ -1447,13 +1422,8 @@ public class websocket_api extends WebSocketListener {
         synchronized (replyObjectProcess) {
             startTime = System.currentTimeMillis();
             log.info("开始send请求  "+startTime );
-            boolean bRet = mWebsocket.send(strMessage);
+            mWebsocket.send(strMessage);
 
-            if (bRet == false) {
-                log.info("bRet =  null ");
-                //throw new NetworkStatusException("Failed to send message to server.");
-                return null;
-            }
             try {
                 replyObjectProcess.wait(2000);
                 Reply<T> replyObject = replyObjectProcess.getReplyObject();
