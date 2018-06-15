@@ -68,14 +68,15 @@ public class private_key {
             byte[] keyBytes = new byte[33];
             System.arraycopy(key_data, 0, keyBytes, 1, 32);
             BigInteger privateKeys = new BigInteger(keyBytes);
-            BCECPrivateKey privateKey = (BCECPrivateKey) keyFactory.generatePrivate(privSpec);
 
             Point Q = EcTools.multiply(Parameters.G, privateKeys);
 
-            //ECPoint ecPoint = ECKey.CURVE.getG().multiply(privateKeys);
             org.spongycastle.math.ec.ECPoint ecpubPoint = new org.spongycastle.math.ec.custom.sec.SecP256K1Curve().createPoint(Q.getX().toBigInteger(), Q.getY().toBigInteger());
-            PublicKey publicKey = keyFactory.generatePublic(new org.spongycastle.jce.spec.ECPublicKeySpec(ecpubPoint, secp256k1));
 
+            org.spongycastle.jce.spec.ECPublicKeySpec spec = new org.spongycastle.jce.spec.ECPublicKeySpec(ecpubPoint, secp256k1);
+
+            PublicKey publicKey = keyFactory.generatePublic(spec);
+//            PublicKey publicKey = new BCECPublicKey("EC", spec, (org.spongycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi) instance.impl);
             BCECPublicKey bcecPublicKey = (BCECPublicKey) publicKey;
             byte bytePublic[] = bcecPublicKey.getQ().getEncoded(true);
 

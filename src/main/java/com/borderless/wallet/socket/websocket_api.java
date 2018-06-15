@@ -77,8 +77,8 @@ public class websocket_api implements websocketInterface {
 
             if (iReplyObjectProcess != null) {
                 iReplyObjectProcess.processTextToObject(resultMsg+"\t\n");
-            } else {
 
+                iReplyObjectProcess.notify();
             }
         } catch (JsonSyntaxException e) {
             e.printStackTrace();
@@ -145,18 +145,15 @@ public class websocket_api implements websocketInterface {
                 strResponse = strText;
                 gRespJson = strText;
                 Gson gson = global_config_object.getInstance().getGsonBuilder().create();
-//                System.out.println("strText = [" + strText + "]");
                 mT = gson.fromJson(strText, mType);
             } catch (JsonSyntaxException e) {
                 e.printStackTrace();
                 strError = e.getMessage();
                 strResponse = strText;
-                System.out.println(strText + "\n" +e.getMessage() );
             } catch (Exception e) {
                 e.printStackTrace();
                 strError = e.getMessage();
                 strResponse = strText;
-                System.out.println("strText = [" + strText + "]" +e.getMessage());
             }
             synchronized (this) {
                 notify();
@@ -1319,8 +1316,9 @@ public class websocket_api implements websocketInterface {
                                           ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
         Gson gson = global_config_object.getInstance().getGsonBuilder().create();
         String strMessage = gson.toJson(callObject);
-        System.out.println("sendJsonForReplyImpl origin= " + strMessage );
-//        System.out.println("sendJsonForReplyImpl = [" + strMessage + "]");
+
+        log.debug("Wallet send message:" + strMessage);
+
         synchronized (mHashMapIdToProcess) {
             mHashMapIdToProcess.put(callObject.id, replyObjectProcess);
         }
@@ -1344,7 +1342,7 @@ public class websocket_api implements websocketInterface {
                 return replyObject;
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                System.out.println("sendJsonForReplyImpl "+e.getMessage());
+                log.error("Websocket Interrupted:"+e.getMessage());
                 return null;
             }
         }
@@ -1405,7 +1403,6 @@ public class websocket_api implements websocketInterface {
     private <T> Reply<T> sendForReplyImpl(Call callObject, ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
         Gson gson = global_config_object.getInstance().getGsonBuilder().create();
         String strMessage = gson.toJson(callObject);
-        System.out.println(strMessage);
 
         synchronized (mHashMapIdToProcess) {
             mHashMapIdToProcess.put(callObject.id, replyObjectProcess);
@@ -1420,23 +1417,21 @@ public class websocket_api implements websocketInterface {
         }
 
         synchronized (replyObjectProcess) {
-            startTime = System.currentTimeMillis();
-            log.info("开始send请求  "+startTime );
+            log.debug("Wallet send message:" + strMessage);
             mWebsocket.send(strMessage);
 
             try {
                 replyObjectProcess.wait(2000);
                 Reply<T> replyObject = replyObjectProcess.getReplyObject();
                 String jsonResp = replyObjectProcess.getResponse();
-//                System.out.println("jsonResp = " + jsonResp + "");
-                System.out.println(jsonResp);
+
+                log.debug("Wallet receive message:" + jsonResp);
+
                 String strError = replyObjectProcess.getError();
                 if (TextUtils.isEmpty(strError) == false) {
-                    log.info("jsonResp =   "+jsonResp);
 //                   throw new NetworkStatusException(strError);
                     return null;
                 } else if (replyObjectProcess.getException() != null) {
-                    log.error("jsonResp =   "+jsonResp);
 //                   throw new NetworkStatusException(replyObjectProcess.getException());
                     return null;
                 } else if (replyObject == null) {
