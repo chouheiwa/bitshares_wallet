@@ -294,22 +294,20 @@ public class types {
 
         public void write_to_encode(base_encoder baseEncoder) {
             raw_type rawObject = new raw_type();
-            System.out.println("account_options 写入 memo_key_key_data");
+
             baseEncoder.write(memo_key.key_data);
-            System.out.println("account_options 写入 voting_account");
+
             rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(voting_account.get_instance()));
 
-            System.out.println("account_options 写入 num_witness");
             baseEncoder.write(rawObject.get_byte_array(num_witness.shortValue()));
-            System.out.println("account_options 写入 num_committee");
+
             baseEncoder.write(rawObject.get_byte_array(num_committee.shortValue()));
-//            System.out.println("account_options 写入 votes.size()");
+//
             rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(votes.size()));
 
             for (vote_id_type type : votes) {
                 rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(type.content));
             }
-            System.out.println("account_options 写入 extensions.size()");
             //extensions 未完成
             rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(extensions.size()));
 

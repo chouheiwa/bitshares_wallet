@@ -53,6 +53,7 @@ public class websocket_api implements websocketInterface {
 
     @Override
     public void onOpen() {
+//        System.out.println("连接成功");
         synchronized (mWebsocket) {
             mnConnectStatus = WEBSOCKET_CONNECT_SUCCESS;
             mWebsocket.notify();
@@ -201,18 +202,20 @@ public class websocket_api implements websocketInterface {
         try {
             mWebsocket = new websocketClient(strServer,this);
             mWebsocket.connect();
+//            System.out.println("开始连接" + strServer);
         } catch (URISyntaxException e) {
             return ERROR_CONNECT_SERVER_FAILD;
         }
         synchronized (mWebsocket) {
             if (mnConnectStatus == WEBSOCKET_CONNECT_INVALID) {
                 try {
-                    mWebsocket.wait(2000);
+                    mWebsocket.wait(10000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
                 if (mnConnectStatus != WEBSOCKET_CONNECT_SUCCESS) {
+//                    System.out.println("连接失败" + strServer);
                     return ERROR_CONNECT_SERVER_FAILD;
                 }
             }
@@ -388,7 +391,7 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<List<account_object>>>(){}.getType());
         Reply<List<account_object>> replyAccountObjectList = sendForReply(callObject, replyObject);
         if (replyAccountObjectList == null) {
-           return null;
+            return null;
         } else {
             return replyAccountObjectList.result;
         }
@@ -606,42 +609,42 @@ public class websocket_api implements websocketInterface {
             List<HistoryResponseModel.DataBean> Obj = new ArrayList<HistoryResponseModel.DataBean>();
             return Obj;
         } else {
-                String jsonRpc = replyObject.getResponse();
-                try {
-                    JSONObject jsonObject = new JSONObject(jsonRpc);
-                    JSONArray jsonArray = jsonObject.optJSONArray("result");
-                    HistoryResponseModel.DataBean dataBean = null;
-                    for (int i = 0; i < jsonArray.length(); i++){
-                        JSONObject jsonObject1 = jsonArray.optJSONObject(i);
-                        JSONArray jsonArray1 = jsonObject1.optJSONArray("op");
+            String jsonRpc = replyObject.getResponse();
+            try {
+                JSONObject jsonObject = new JSONObject(jsonRpc);
+                JSONArray jsonArray = jsonObject.optJSONArray("result");
+                HistoryResponseModel.DataBean dataBean = null;
+                for (int i = 0; i < jsonArray.length(); i++){
+                    JSONObject jsonObject1 = jsonArray.optJSONObject(i);
+                    JSONArray jsonArray1 = jsonObject1.optJSONArray("op");
 
-                        if (jsonArray1.getString(0).equalsIgnoreCase("0")){
-                            dataBean = new HistoryResponseModel.DataBean();
-                            String block_order_id = jsonObject1.optString("id");
-                            JSONObject jsonObject2 = jsonArray1.getJSONObject(1);
-                            String fromId = jsonObject2.optString("from");
-                            String toId = jsonObject2.optString("to");
-                            String amount = jsonObject2.optJSONObject("amount").optString("amount");
-                            String type =  jsonObject2.optJSONObject("amount").optString("asset_id");
-                            dataBean.setId(block_order_id);
-                            for (asset_object objAsset : objAssets){
-                                if (objAsset.id.toString().equalsIgnoreCase(type)){
-                                    dataBean.setSymbol(objAsset.symbol);
-                                    asset_object.asset_object_legible myasset = objAsset.get_legible_asset_object(Long.parseLong(amount));
-                                    dataBean.setAmount(NumberUtils.formatNumber(myasset.count));
-                                    String sFromName =  get_account(fromId).name;
-                                    String sToName = get_account(toId).name;
-                                    dataBean.setFrom(sFromName);
-                                    dataBean.setTo(sToName);
-                                    list.add(dataBean);
-                                }
+                    if (jsonArray1.getString(0).equalsIgnoreCase("0")){
+                        dataBean = new HistoryResponseModel.DataBean();
+                        String block_order_id = jsonObject1.optString("id");
+                        JSONObject jsonObject2 = jsonArray1.getJSONObject(1);
+                        String fromId = jsonObject2.optString("from");
+                        String toId = jsonObject2.optString("to");
+                        String amount = jsonObject2.optJSONObject("amount").optString("amount");
+                        String type =  jsonObject2.optJSONObject("amount").optString("asset_id");
+                        dataBean.setId(block_order_id);
+                        for (asset_object objAsset : objAssets){
+                            if (objAsset.id.toString().equalsIgnoreCase(type)){
+                                dataBean.setSymbol(objAsset.symbol);
+                                asset_object.asset_object_legible myasset = objAsset.get_legible_asset_object(Long.parseLong(amount));
+                                dataBean.setAmount(NumberUtils.formatNumber(myasset.count));
+                                String sFromName =  get_account(fromId).name;
+                                String sToName = get_account(toId).name;
+                                dataBean.setFrom(sFromName);
+                                dataBean.setTo(sToName);
+                                list.add(dataBean);
                             }
                         }
                     }
-                } catch (JSONException e) {
-                  e.printStackTrace();
-                  return list;
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                return list;
+            }
             return list;
         }
     }
@@ -998,8 +1001,8 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<Integer>>(){}.getType());
         Reply<Object> replyObject = sendForReply(callObject, replyObjectProcess);
         if (replyObject == null) {
-		//return -1;
-             return -2;
+            //return -1;
+            return -2;
         } else {
             if (replyObject.error != null) {
                 return -1;
@@ -1190,9 +1193,9 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>(){}.getType());
         Reply<List<limit_order_object>> obj = sendForReply(callObject, replyObject);
         if (obj == null ) {
-             strResopnse = replyObject.getResponse();
+            strResopnse = replyObject.getResponse();
         } else {
-             strResopnse = replyObject.getResponse();
+            strResopnse = replyObject.getResponse();
             if (strResopnse != null && !strResopnse.isEmpty()) {
                 try {
                     JSONObject jsonObject = new JSONObject(strResopnse);
@@ -1313,7 +1316,7 @@ public class websocket_api implements websocketInterface {
     }
 
     private <T> Reply<T> sendJsonForReplyImpl(Call callObject,
-                                          ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
+                                              ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
         Gson gson = global_config_object.getInstance().getGsonBuilder().create();
         String strMessage = gson.toJson(callObject);
 
@@ -1426,7 +1429,7 @@ public class websocket_api implements websocketInterface {
                 String jsonResp = replyObjectProcess.getResponse();
 
                 log.debug("Wallet receive message:" + jsonResp);
-
+//                System.out.println("Wallet receive message:" + jsonResp);
                 String strError = replyObjectProcess.getError();
                 if (TextUtils.isEmpty(strError) == false) {
 //                   throw new NetworkStatusException(strError);
@@ -1468,7 +1471,7 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>(){}.getType());
         String strResp = null;
         try {
-             strResp = sendForJsonReply(callObject, replyObject);
+            strResp = sendForJsonReply(callObject, replyObject);
         } catch (Exception e) {
             strResp = replyObject.getResponse();
         }
@@ -1678,5 +1681,54 @@ public class websocket_api implements websocketInterface {
         }
     }
 
+    public operations.operation_type get_history_object(Integer object) throws NetworkStatusException {
+        _nDatabaseId = get_database_api_id();
+        Call callObject = new Call();
+        callObject.id = mnCallId.getAndIncrement();
+        callObject.method = "call";
+        callObject.params = new ArrayList<>();
+        callObject.params.add(_nDatabaseId);
+        callObject.params.add("get_objects");
 
+        List<Object> listParams = new ArrayList<>();
+        List list = new ArrayList();
+
+        list.add("1.11." + object);
+
+        listParams.add(list);
+        callObject.params.add(listParams);
+
+        ReplyObjectProcess<Reply<List<limit_order_object>>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>() {}.getType());
+        String strResp;
+        try {
+            strResp = sendForJsonReply(callObject, replyObject);
+        } catch (Exception e) {
+            strResp = replyObject.getResponse();
+        }
+
+        if (strResp == null)
+            strResp = replyObject.getResponse();
+        if (strResp != null) {
+            try {
+                JSONObject jsonObject = null;
+                jsonObject = new JSONObject(strResp);
+                JSONArray jsonArray = jsonObject.getJSONArray("result");
+
+                if (jsonArray.length() > 0) {
+                    JSONObject obj = jsonArray.getJSONObject(0);
+
+                    Gson gson = global_config_object.getInstance().getGsonBuilder().create();
+
+                    operations.operation_type operation_type = gson.fromJson(obj.getJSONArray("op").toString(), operations.operation_type.class);
+
+                    return operation_type;
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+        return null;
+    }
 }

@@ -21,6 +21,8 @@ import com.borderless.wallet.socket.fc.io.raw_type;
 import com.borderless.wallet.socket.market.MarketTicker;
 import org.bitcoinj.core.ECKey;
 import org.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.digests.SHA512Digest;
 
@@ -35,6 +37,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class wallet_api {
+    protected  final Logger log = LoggerFactory.getLogger(this.getClass());
+
     class wallet_object {
         sha256_object chain_id;
         List<account_object> my_accounts = new ArrayList<>();
@@ -167,8 +171,7 @@ public class wallet_api {
         byte[] ivBytes = new byte[16];
         System.arraycopy(mCheckSum.hash, 32, ivBytes, 0, ivBytes.length);
 
-        ByteBuffer byteResult = aes.encrypt(byteKey, ivBytes, encoder.getData());
-        mWalletObject.cipher_keys = byteResult;
+        mWalletObject.cipher_keys = aes.encrypt(byteKey, ivBytes, encoder.getData());
 
         return;
     }
@@ -878,6 +881,21 @@ public class wallet_api {
         return sign_transaction(tx);
     }
 
+    public signed_transaction create_transcation(operations.base_operation base_operation) throws NetworkStatusException {
+
+//        ID_UPDATE_LMMIT_ORDER_OPERATION
+        operations.operation_type operationType = new operations.operation_type();
+        operationType.nOperationType = new  operations.operation_id_map().getIdByOperationObject(base_operation.getClass());
+        operationType.operationContent = base_operation;
+
+        signed_transaction tx = new signed_transaction();
+        tx.operations = new ArrayList<>();
+        tx.operations.add(operationType);
+
+        tx.extensions = new HashSet<>();
+        set_operation_fees(tx, get_global_properties().parameters.current_fees);
+        return sign_transaction(tx);
+    }
 
     /**
      * @param symbolToSell    卖出的货币符号
@@ -1076,7 +1094,7 @@ public class wallet_api {
         operation.owner = vesting_owner.id;
 
         operation.amount = symbol.amount_from_string(amount);
-        
+
 
         operations.operation_type operationType = new operations.operation_type();
         operationType.nOperationType = operations.ID_VESTING_WITHDRAW_OPERATION;
@@ -1116,6 +1134,38 @@ public class wallet_api {
 
         operations.operation_type operationType = new operations.operation_type();
         operationType.nOperationType = operations.ID_ASSET_CREATE_OPERATION;
+        operationType.operationContent = operation;
+
+        signed_transaction tx = new signed_transaction();
+        tx.operations = new ArrayList<>();
+        tx.operations.add(operationType);
+
+        tx.extensions = new HashSet<>();
+        set_operation_fees(tx,get_global_properties().parameters.current_fees);
+
+        return sign_transaction(tx);
+    }
+
+    public signed_transaction change_account_key(String account,String pubkey) throws Exception {
+        account_object account_object = get_account(account);
+
+        assert (account_object != null);
+
+        operations.account_update_operation operation = new operations.account_update_operation();
+
+        operation.account = account_object.id;
+
+        types.public_key_type public_key_type = new types.public_key_type(pubkey);
+
+        operation.active = new authority(1, public_key_type, 1);
+        operation.owner = new authority(1, public_key_type, 1);
+
+        operation.new_options = account_object.options;
+
+        operation.new_options.memo_key = public_key_type;
+
+        operations.operation_type operationType = new operations.operation_type();
+        operationType.nOperationType = operations.ID_ACCOUNT_UPDATE_OPERATION;
         operationType.operationContent = operation;
 
         signed_transaction tx = new signed_transaction();
@@ -1550,6 +1600,10 @@ public class wallet_api {
         return mWebsocketApi.get_object(asset.bitasset_data_id.toString());
     }
 
+    public String get_object(String object) throws NetworkStatusException {
+        return mWebsocketApi.get_object(object);
+    }
+
     public AllHistory get_all_history(String baseSymbolId, String qouteSymbolId, int nLimit)
         throws NetworkStatusException{
         return mWebsocketApi.get_all_history(baseSymbolId, qouteSymbolId,nLimit);
@@ -1584,5 +1638,7 @@ public class wallet_api {
         }
         return keys;
     }
-
+    public operations.operation_type get_history_object(Integer object) throws NetworkStatusException {
+        return mWebsocketApi.get_history_object(object);
+    }
 }

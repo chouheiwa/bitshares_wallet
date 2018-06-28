@@ -5,6 +5,7 @@ import com.borderless.wallet.net.model.AllHistory;
 import com.borderless.wallet.net.model.HistoryResponseModel;
 import com.borderless.wallet.socket.chain.*;
 import com.borderless.wallet.socket.common.ErrorCode;
+import com.borderless.wallet.socket.exception.NetworkStatusException;
 import com.borderless.wallet.socket.market.MarketTicker;
 //import de.bitsharesmunich.graphenej.Address;
 //import de.bitsharesmunich.graphenej.Asset;
@@ -298,6 +299,10 @@ public class BitsharesWalletWraper {
         return mWalletApi.get_Fee(id,op);
     }
 
+    public String get_object(String object) throws Exception {
+        return mWalletApi.get_object(object);
+    }
+
     public Map<object_id<account_object>, account_object> get_accounts(List<object_id<account_object>> listAccountObjectId) throws Exception {
         Map<object_id<account_object>, account_object> mapId2Object = new HashMap<>();
 
@@ -330,6 +335,14 @@ public class BitsharesWalletWraper {
 
     public signed_transaction borrow_asset(String amount_to_borrow,String asset_symbol,String amount_to_collateral,int index) throws Exception {
         return mWalletApi.borrow_asset(amount_to_borrow,asset_symbol,amount_to_collateral,index);
+    }
+
+    public signed_transaction change_account_key(String account,String pubkey) throws Exception {
+        return mWalletApi.change_account_key(account, pubkey);
+    }
+
+    public signed_transaction create_transcation(operations.base_operation base_operation) throws Exception {
+        return mWalletApi.create_transcation(base_operation);
     }
 
     // 获取区块信息
@@ -667,5 +680,14 @@ public class BitsharesWalletWraper {
 
     public com.borderless.wallet.socket.market.OrderBook get_order_book(String base, String quote, int limit) throws  Exception{
         return  mWalletApi.get_order_book(base,quote,limit);
+    }
+    public operations.operation_type get_history_object(Integer object) throws NetworkStatusException {
+        return mWalletApi.get_history_object(object);
+    }
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+
+        System.out.println("释放wallet");
     }
 }

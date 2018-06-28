@@ -9,7 +9,6 @@ import com.borderless.wallet.socket.authority;
 import com.borderless.wallet.socket.fc.io.base_encoder;
 import com.borderless.wallet.socket.fc.io.raw_type;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.*;
@@ -37,19 +36,33 @@ public class operations {
     public static class operation_id_map {
         private HashMap<Integer, Type> mHashId2Operation = new HashMap<>();
         private HashMap<Integer, Type> mHashId2OperationFee = new HashMap<>();
+        private HashMap<Type, Integer> mHashOperation2Id = new HashMap<>();
         public operation_id_map() {
-
             mHashId2Operation.put(ID_TRANSER_OPERATION, transfer_operation.class);
             mHashId2Operation.put(ID_CREATE_LIMIT_ORDER_OPERATION, limit_order_create_operation.class);
             mHashId2Operation.put(ID_CANCEL_LMMIT_ORDER_OPERATION, limit_order_cancel_operation.class);
             mHashId2Operation.put(ID_UPDATE_LMMIT_ORDER_OPERATION, call_order_update_operation.class);
             mHashId2Operation.put(ID_FILL_LMMIT_ORDER_OPERATION, fill_order_operation.class);
             mHashId2Operation.put(ID_CREATE_ACCOUNT_OPERATION, account_create_operation.class);
+            mHashId2Operation.put(ID_ACCOUNT_UPDATE_OPERATION, account_update_operation.class);
             mHashId2Operation.put(ID_UPGRADE_ACCOUNT_OPERATION,account_upgrade_operation.class);
             mHashId2Operation.put(ID_PUBLISHING_ASSET_FEED_OPERATION,asset_publish_feed_operation.class);
             mHashId2Operation.put(ID_VESTING_WITHDRAW_OPERATION,withdraw_vesting_operation.class);
             mHashId2Operation.put(ID_ASSET_CREATE_OPERATION,asset_create_operation.class);
             mHashId2Operation.put(ID_ASSET_ISSUE_OPERATION,asset_issue_operation.class);
+
+            mHashOperation2Id.put(transfer_operation.class, ID_TRANSER_OPERATION);
+            mHashOperation2Id.put(limit_order_create_operation.class, ID_CREATE_LIMIT_ORDER_OPERATION);
+            mHashOperation2Id.put(limit_order_cancel_operation.class, ID_CANCEL_LMMIT_ORDER_OPERATION);
+            mHashOperation2Id.put(call_order_update_operation.class, ID_UPDATE_LMMIT_ORDER_OPERATION);
+            mHashOperation2Id.put(fill_order_operation.class, ID_FILL_LMMIT_ORDER_OPERATION);
+            mHashOperation2Id.put(account_create_operation.class, ID_CREATE_ACCOUNT_OPERATION);
+            mHashOperation2Id.put(account_update_operation.class,ID_ACCOUNT_UPDATE_OPERATION);
+            mHashOperation2Id.put(account_upgrade_operation.class, ID_UPGRADE_ACCOUNT_OPERATION);
+            mHashOperation2Id.put(asset_publish_feed_operation.class, ID_PUBLISHING_ASSET_FEED_OPERATION);
+            mHashOperation2Id.put(withdraw_vesting_operation.class, ID_VESTING_WITHDRAW_OPERATION);
+            mHashOperation2Id.put(asset_create_operation.class, ID_ASSET_CREATE_OPERATION);
+            mHashOperation2Id.put(asset_issue_operation.class ,ID_ASSET_ISSUE_OPERATION);
 
             mHashId2OperationFee.put(ID_TRANSER_OPERATION, transfer_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_CREATE_LIMIT_ORDER_OPERATION, limit_order_create_operation.fee_parameters_type.class);
@@ -57,6 +70,7 @@ public class operations {
             mHashId2OperationFee.put(ID_UPDATE_LMMIT_ORDER_OPERATION, call_order_update_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_FILL_LMMIT_ORDER_OPERATION, fill_order_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_CREATE_ACCOUNT_OPERATION, account_create_operation.fee_parameters_type.class);
+            mHashId2OperationFee.put(ID_ACCOUNT_UPDATE_OPERATION, account_update_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_UPGRADE_ACCOUNT_OPERATION,account_upgrade_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_PUBLISHING_ASSET_FEED_OPERATION,asset_publish_feed_operation.fee_parameters_type.class);
             mHashId2OperationFee.put(ID_VESTING_WITHDRAW_OPERATION,withdraw_vesting_operation.fee_parameters_type.class);
@@ -64,7 +78,9 @@ public class operations {
             mHashId2OperationFee.put(ID_ASSET_ISSUE_OPERATION,asset_issue_operation.fee_parameters_type.class);
 
         }
-
+        public int getIdByOperationObject(Type type) {
+            return mHashOperation2Id.get(type);
+        }
         public Type getOperationObjectById(int nId) {
             return mHashId2Operation.get(nId);
         }
@@ -706,6 +722,109 @@ public class operations {
         @Override
         public List<object_id<asset_object>> get_asset_id_list() {
             return null;
+        }
+    }
+
+    public static class account_update_operation implements base_operation {
+        class fee_parameters_type {
+            long fee = 20*GRAPHENE_BLOCKCHAIN_PRECISION;///< the cost to register the cheapest non-free account
+            int  price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+        }
+
+        public asset fee;
+        public object_id<account_object> account;
+        public authority owner;
+        public authority active;
+        public types.account_options new_options;
+        public HashMap         extensions = new HashMap();
+
+        @Override
+        public List<authority> get_required_authorities() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public List<object_id<account_object>> get_required_active_authorities() {
+            List<object_id<account_object>> activeList = new ArrayList<>();
+            activeList.add(fee_payer());
+            return activeList;
+        }
+
+        @Override
+        public List<object_id<account_object>> get_required_owner_authorities() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public void write_to_encoder(base_encoder baseEncoder) {
+            raw_type rawObject = new raw_type();
+            //打包手续费
+            if (fee == null) {
+                new asset(1,object_id.create_from_string("1.3.0")).write_to_encoder(baseEncoder);
+            }else {
+                fee.write_to_encoder(baseEncoder);
+            }
+            //打包账户
+            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(account.get_instance()));
+
+            baseEncoder.write(rawObject.get_byte(owner != null));
+            if (owner != null) {
+                owner.write_to_endcode(baseEncoder);
+            }
+
+            baseEncoder.write(rawObject.get_byte(active != null));
+            if (active != null) {
+                active.write_to_endcode(baseEncoder);
+            }
+
+            baseEncoder.write(rawObject.get_byte(new_options != null));
+            if (new_options != null) {
+                new_options.write_to_encode(baseEncoder);
+            }
+
+            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(extensions.size()));
+        }
+
+        @Override
+        public long calculate_fee(Object objectFeeParameter) {
+            assert(fee_parameters_type.class.isInstance(objectFeeParameter));
+            fee_parameters_type feeParametersType = (fee_parameters_type)objectFeeParameter;
+
+            long fee = feeParametersType.fee;
+
+            datastream_size_encoder size_encoder = new datastream_size_encoder();
+
+            write_to_encoder(size_encoder);
+
+            BigInteger nSize = BigInteger.valueOf(size_encoder.getSize());
+
+            BigInteger nPrice = BigInteger.valueOf(feeParametersType.price_per_kbyte);
+            BigInteger nKbyte = BigInteger.valueOf(1024);
+            BigInteger nAmount = nPrice.multiply(nSize).divide(nKbyte);
+
+            fee += nAmount.longValue();
+
+            return fee;
+        }
+
+        @Override
+        public void set_fee(asset fee) {
+            this.fee = fee;
+        }
+
+        @Override
+        public object_id<account_object> fee_payer() {
+            return account;
+        }
+
+        @Override
+        public List<object_id<account_object>> get_account_id_list() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public List<object_id<asset_object>> get_asset_id_list() {
+            return new ArrayList<>();
         }
     }
 

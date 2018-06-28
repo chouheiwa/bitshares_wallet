@@ -218,7 +218,7 @@ public class authority {
 
             baseEncoder.write(pub.key_data);
 //            rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits((int)key.get(1)));
-            System.out.println("authority  public_key_weight");
+
             baseEncoder.write(rawObject.get_byte_array(weight.shortValue()));
         }
 
