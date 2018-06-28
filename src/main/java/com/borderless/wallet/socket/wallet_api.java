@@ -1,5 +1,6 @@
 package com.borderless.wallet.socket;
 
+import com.borderless.wallet.utils.CalculateUtils;
 import com.borderless.wallet.utils.TextUtils;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.gson.Gson;
@@ -377,7 +378,7 @@ public class wallet_api {
 
                 asset_object fee = lookup_asset_symbols(transfer.fee.asset_id.toString());
 
-                ob.description = "Transfer " + String.valueOf(transfer.amount.amount / Float.parseFloat(String.valueOf(asset.get_scaled_precision()))) + " " + asset.symbol + " from " + from.name + " to " + to.name + " " + "(Fee: " + String.valueOf(transfer.fee.amount / Float.parseFloat(String.valueOf(fee.get_scaled_precision()))) + " " + fee.symbol + ")";
+                ob.description = "Transfer " + CalculateUtils.div(transfer.amount.amount,Double.parseDouble(asset.get_scaled_precision()+""),5)  + " " + asset.symbol + " from " + from.name + " to " + to.name + " " + "(Fee: " + String.valueOf(transfer.fee.amount / Float.parseFloat(String.valueOf(fee.get_scaled_precision()))) + " " + fee.symbol + ")";
             }
         }
 
