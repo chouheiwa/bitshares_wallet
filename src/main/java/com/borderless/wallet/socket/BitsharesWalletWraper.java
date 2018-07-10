@@ -6,6 +6,7 @@ import com.borderless.wallet.net.model.HistoryResponseModel;
 import com.borderless.wallet.socket.chain.*;
 import com.borderless.wallet.socket.common.ErrorCode;
 import com.borderless.wallet.socket.exception.NetworkStatusException;
+import com.borderless.wallet.socket.fc.crypto.sha256_object;
 import com.borderless.wallet.socket.market.MarketTicker;
 //import de.bitsharesmunich.graphenej.Address;
 //import de.bitsharesmunich.graphenej.Asset;
@@ -190,6 +191,10 @@ public class BitsharesWalletWraper {
 
     public int unlock(String strPassword) {
         return mWalletApi.unlock(strPassword);
+    }
+
+    public sha256_object get_chain_id() throws Exception {
+        return mWalletApi.get_chain_id();
     }
 
     public signed_transaction create_account_with_pub_key(String pubKey, String strAccountName,
@@ -429,6 +434,12 @@ public class BitsharesWalletWraper {
 
             mMapAccountId2History.put(accountObjectId, listHistoryObject);
         }
+        return listHistoryObject;
+    }
+
+    public operation_types_histoy_object get_account_history_by_operations(object_id<account_object> accountId,List<Integer> operation_types, int start, int nLimit) throws Exception {
+        operation_types_histoy_object listHistoryObject = mWalletApi.get_account_history_by_operations(accountId,operation_types,start,nLimit);
+
         return listHistoryObject;
     }
 

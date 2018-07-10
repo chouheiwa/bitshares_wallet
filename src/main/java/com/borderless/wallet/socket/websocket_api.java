@@ -143,6 +143,7 @@ public class websocket_api implements websocketInterface {
 
         public void processTextToObject(String strText) {
             try {
+                System.out.println(strText);
                 strResponse = strText;
                 gRespJson = strText;
                 Gson gson = global_config_object.getInstance().getGsonBuilder().create();
@@ -363,8 +364,7 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<sha256_object>>(){}.getType());
         Reply<sha256_object> replyDatabase = sendForReply(callObject, replyObject);
         if (replyDatabase == null) {
-            sha256_object Obj = new sha256_object();
-            return Obj;
+            return null;
         } else {
             return replyDatabase.result;
         }
@@ -474,6 +474,33 @@ public class websocket_api implements websocketInterface {
             return replyAccountHistory.result;
         }
     }
+
+    public operation_types_histoy_object get_account_history_by_operations(object_id<account_object> accountId,List<Integer> operation_types, int start, int nLimit) throws NetworkStatusException {
+        _nHistoryId = get_history_api_id();
+        Call callObject = new Call();
+        callObject.id = mnCallId.getAndIncrement();
+        callObject.method = "call";
+        callObject.params = new ArrayList<>();
+        callObject.params.add(_nHistoryId);
+        callObject.params.add("get_account_history_by_operations");
+
+        List<Object> listAccountHistoryParam = new ArrayList<>();
+        listAccountHistoryParam.add(accountId);
+        listAccountHistoryParam.add(operation_types);
+        listAccountHistoryParam.add(start);
+        listAccountHistoryParam.add(nLimit);
+        callObject.params.add(listAccountHistoryParam);
+
+        ReplyObjectProcess<Reply<operation_types_histoy_object>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<operation_types_histoy_object>>(){}.getType());
+        Reply<operation_types_histoy_object> replyAccountHistory = sendForReply(callObject, replyObject);
+        if (replyAccountHistory == null) {
+            return null;
+        } else {
+            return replyAccountHistory.result;
+        }
+    }
+
 
     public List<operation_history_object> get_account_history_with_last_id(object_id<account_object> accountId, int nLimit, String id) throws NetworkStatusException {
         _nHistoryId = get_history_api_id();

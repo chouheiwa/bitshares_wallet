@@ -359,6 +359,10 @@ public class wallet_api {
         return mWebsocketApi.get_account_history(accountId, nLimit);
     }
 
+    public operation_types_histoy_object get_account_history_by_operations(object_id<account_object> accountId,List<Integer> operation_types, int start, int nLimit) throws NetworkStatusException {
+        return mWebsocketApi.get_account_history_by_operations(accountId, operation_types, start, nLimit);
+    }
+
     public List<operation_history_object> get_account_history_with_last_id(object_id<account_object> accountId, int nLimit,String id) throws NetworkStatusException {
 
         List<operation_history_object> list = mWebsocketApi.get_account_history_with_last_id(accountId, nLimit,id);
@@ -385,7 +389,9 @@ public class wallet_api {
         return list;
     }
 
-
+    public sha256_object get_chain_id() throws Exception {
+        return mWebsocketApi.get_chain_id();
+    }
 
     public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException,Exception {
         return mWebsocketApi.get_transfer_history(accountId, nLimit);
