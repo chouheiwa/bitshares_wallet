@@ -359,8 +359,18 @@ public class wallet_api {
         return mWebsocketApi.get_account_history(accountId, nLimit);
     }
 
-    public operation_types_histoy_object get_account_history_by_operations(object_id<account_object> accountId,List<Integer> operation_types, int start, int nLimit) throws NetworkStatusException {
-        return mWebsocketApi.get_account_history_by_operations(accountId, operation_types, start, nLimit);
+    public operation_types_histoy_object get_account_history_by_operations(String accountIdOrName,List<Integer> operation_types, int start, int nLimit) throws NetworkStatusException {
+        object_id id = object_id.create_from_string(accountIdOrName);
+
+        if (id == null) {
+            List<account_object> list = lookup_account_names(accountIdOrName);
+
+            if (list.size() == 0) return null;
+
+            id = list.get(0).id;
+        }
+
+        return mWebsocketApi.get_account_history_by_operations(id, operation_types, start, nLimit);
     }
 
     public List<operation_history_object> get_account_history_with_last_id(object_id<account_object> accountId, int nLimit,String id) throws NetworkStatusException {
@@ -1499,7 +1509,6 @@ public class wallet_api {
 
         // 发出tx，进行广播，这里也涉及到序列化
         int nRet = mWebsocketApi.broadcast_transaction(tx);
-        System.out.println(nRet);
         if (nRet == 0) {
             return tx;
         } else {

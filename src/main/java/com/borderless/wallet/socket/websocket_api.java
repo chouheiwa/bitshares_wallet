@@ -143,7 +143,6 @@ public class websocket_api implements websocketInterface {
 
         public void processTextToObject(String strText) {
             try {
-                System.out.println(strText);
                 strResponse = strText;
                 gRespJson = strText;
                 Gson gson = global_config_object.getInstance().getGsonBuilder().create();

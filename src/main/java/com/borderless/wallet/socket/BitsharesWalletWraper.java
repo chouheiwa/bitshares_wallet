@@ -437,8 +437,8 @@ public class BitsharesWalletWraper {
         return listHistoryObject;
     }
 
-    public operation_types_histoy_object get_account_history_by_operations(object_id<account_object> accountId,List<Integer> operation_types, int start, int nLimit) throws Exception {
-        operation_types_histoy_object listHistoryObject = mWalletApi.get_account_history_by_operations(accountId,operation_types,start,nLimit);
+    public operation_types_histoy_object get_account_history_by_operations(String accountIdOrName,List<Integer> operation_types, int start, int nLimit) throws Exception {
+        operation_types_histoy_object listHistoryObject = mWalletApi.get_account_history_by_operations(accountIdOrName,operation_types,start,nLimit);
 
         return listHistoryObject;
     }
