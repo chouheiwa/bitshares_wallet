@@ -1516,6 +1516,10 @@ public class wallet_api {
         }
     }
 
+    public List<CallOrder> get_call_orders(object_id asset_id,Integer limit) throws NetworkStatusException {
+        return mWebsocketApi.get_call_orders(asset_id,limit);
+    }
+
     public List<bucket_object> get_market_history(object_id<asset_object> assetObjectId1,
                                                   object_id<asset_object> assetObjectId2,
                                                   int nBucket, Date dateStart, Date dateEnd)

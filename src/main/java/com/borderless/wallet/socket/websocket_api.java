@@ -369,6 +369,36 @@ public class websocket_api implements websocketInterface {
         }
     }
 
+    public List<CallOrder> get_call_orders(object_id asset_id,Integer limit) throws NetworkStatusException {
+        _nDatabaseId = get_database_api_id();
+        Call callObject = new Call();
+        callObject.id = mnCallId.getAndIncrement();
+        callObject.method = "call";
+        callObject.params = new ArrayList<>();
+        callObject.params.add(_nDatabaseId);
+        callObject.params.add("get_call_orders");
+
+        List<Object> listDatabaseParams = new ArrayList<>();
+
+        listDatabaseParams.add(asset_id);
+
+        listDatabaseParams.add(limit);
+
+        callObject.params.add(listDatabaseParams);
+
+        ReplyObjectProcess<Reply<List<CallOrder>>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<List<CallOrder>>>(){}.getType());
+        Reply<List<CallOrder>> replyDatabase = sendForReply(callObject, replyObject);
+
+        System.out.println(replyObject.getResponse());
+
+        if (replyDatabase == null) {
+            return null;
+        } else {
+            return replyDatabase.result;
+        }
+    }
+
     public List<account_object> lookup_account_names(String strAccountName) throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
         Call callObject = new Call();
