@@ -422,6 +422,27 @@ public class BitsharesWalletWraper {
         return listAllHistoryObject;
     }
 
+    public List<CallOrder> get_call_orders(String assetIdOrName,Integer limit) throws NetworkStatusException {
+        object_id object_id = com.borderless.wallet.socket.chain.object_id.create_from_string(assetIdOrName);
+
+        if (object_id == null) {
+            asset_object list = null;
+
+            try {
+                list = lookup_asset_symbols(assetIdOrName);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+
+            if (list == null) return null;
+
+            object_id = list.id;
+        }
+
+        return mWalletApi.get_call_orders(object_id,limit);
+    }
+
     public List<operation_history_object> get_account_history(object_id<account_object> accountObjectId,
                                                               int nLimit,
                                                               boolean bRefresh) throws Exception {
