@@ -398,7 +398,7 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<List<CallOrder>>>(){}.getType());
         Reply<List<CallOrder>> replyDatabase = sendForReply(callObject, replyObject);
 
-        System.out.println(replyObject.getResponse());
+//        System.out.println(replyObject.getResponse());
 
         if (replyDatabase == null) {
             return null;
@@ -531,6 +531,33 @@ public class websocket_api implements websocketInterface {
         ReplyObjectProcess<Reply<operation_types_histoy_object>> replyObject =
                 new ReplyObjectProcess<>(new TypeToken<Reply<operation_types_histoy_object>>(){}.getType());
         Reply<operation_types_histoy_object> replyAccountHistory = sendForReply(callObject, replyObject);
+        if (replyAccountHistory == null) {
+            return null;
+        } else {
+            return replyAccountHistory.result;
+        }
+    }
+
+    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation_id, int start, int stop, int nLimit) throws NetworkStatusException {
+        _nHistoryId = get_history_api_id();
+        Call callObject = new Call();
+        callObject.id = mnCallId.getAndIncrement();
+        callObject.method = "call";
+        callObject.params = new ArrayList<>();
+        callObject.params.add(_nHistoryId);
+        callObject.params.add("get_account_history_operations");
+
+        List<Object> listAccountHistoryParam = new ArrayList<>();
+        listAccountHistoryParam.add(accountId);
+        listAccountHistoryParam.add(operation_id);
+        listAccountHistoryParam.add("1.11." + start);
+        listAccountHistoryParam.add("1.11." + stop);
+        listAccountHistoryParam.add(nLimit);
+        callObject.params.add(listAccountHistoryParam);
+
+        ReplyObjectProcess<Reply<List<operation_history_object>>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<List<operation_history_object>>>(){}.getType());
+        Reply<List<operation_history_object>> replyAccountHistory = sendForReply(callObject, replyObject);
         if (replyAccountHistory == null) {
             return null;
         } else {
@@ -1493,7 +1520,7 @@ public class websocket_api implements websocketInterface {
                 String jsonResp = replyObjectProcess.getResponse();
 
                 log.debug("Wallet receive message:" + jsonResp);
-//                System.out.println("Wallet receive message:" + jsonResp);
+                System.out.println("Wallet receive message:" + jsonResp);
                 String strError = replyObjectProcess.getError();
                 if (TextUtils.isEmpty(strError) == false) {
 //                   throw new NetworkStatusException(strError);

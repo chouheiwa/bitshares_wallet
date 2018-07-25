@@ -451,10 +451,12 @@ public class BitsharesWalletWraper {
         return listHistoryObject;
     }
 
-    public operation_types_histoy_object get_account_history_by_operations(String accountIdOrName,List<Integer> operation_types, int start, int nLimit) throws Exception {
-        operation_types_histoy_object listHistoryObject = mWalletApi.get_account_history_by_operations(accountIdOrName,operation_types,start,nLimit);
+    public List<operation_history_object> get_account_history_operations_with_last_id(object_id<account_object> accountId, int operation, int nLimit,int id) throws NetworkStatusException {
+        return mWalletApi.get_account_history_operations_with_last_id(accountId, operation, nLimit, id);
+    }
 
-        return listHistoryObject;
+    public operation_types_histoy_object get_account_history_by_operations(String accountIdOrName,List<Integer> operation_types, int start, int nLimit) throws Exception {
+        return mWalletApi.get_account_history_by_operations(accountIdOrName,operation_types,start,nLimit);
     }
 
     public BitshareData prepare_data_to_display(boolean bRefresh,String quotoSymbo,Integer bugket,Date dateStart, Date dateEnd,BitsharesWalletWraper bww) {
