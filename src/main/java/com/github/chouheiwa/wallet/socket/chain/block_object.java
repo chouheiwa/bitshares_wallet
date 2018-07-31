@@ -9,10 +9,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by daihongwei on 2017/10/23.
- */
-
 public class block_object {
         public String timeStame;
         public String blockNumber;
