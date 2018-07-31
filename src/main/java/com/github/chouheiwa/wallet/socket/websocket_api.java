@@ -17,13 +17,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.github.chouheiwa.wallet.net.model.AllHistory;
 import com.github.chouheiwa.wallet.net.model.HistoryResponseModel;
-import com.github.chouheiwa.wallet.socket.chain.*;
-import com.github.chouheiwa.wallet.socket.exception.NetworkStatusException;
-import com.github.chouheiwa.wallet.socket.fc.crypto.sha256_object;
-import com.github.chouheiwa.wallet.socket.market.MarketTicker;
-import com.github.chouheiwa.wallet.socket.market.OrderBook;
-//import okhttp3.*;
-import okio.ByteString;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -70,7 +64,7 @@ public class websocket_api implements websocketInterface {
 
     @Override
     public void onMessage(String resultMsg) {
-        try {
+            try {
             long endTime = System.currentTimeMillis();
             log.info("接收Send请求" + (endTime - startTime));
             Gson gson = new Gson();
@@ -1038,6 +1032,13 @@ public class websocket_api implements websocketInterface {
         List<Object> listBlockNumber = new ArrayList<>();
         listBlockNumber.add(nBlockNumber);
         callObject.params.add(listBlockNumber);
+
+
+
+
+
+
+
 
         ReplyObjectProcess<Reply<block_header>> replyObjectProcess =
                 new ReplyObjectProcess<>(new TypeToken<Reply<block_header>>(){}.getType());

@@ -3,6 +3,9 @@ package com.github.chouheiwa.wallet.socket.chain;
 import com.github.chouheiwa.wallet.socket.authority;
 import com.github.chouheiwa.wallet.socket.full_account_object;
 import com.github.chouheiwa.wallet.socket.common.*;
+import com.github.chouheiwa.wallet.socket.subscribeCallBack.ReceiveModel.CallReceiveModel;
+import com.github.chouheiwa.wallet.socket.subscribeCallBack.ReceiveModel.NoticeReciveParamsModel;
+import com.github.chouheiwa.wallet.socket.subscribeCallBack.SendParamModel;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.GsonBuilder;
@@ -38,9 +41,13 @@ public class global_config_object {
         mGsonBuilder.registerTypeAdapter(ByteBuffer.class, new gson_common_deserializer.ByteBufferDeserializer());
         mGsonBuilder.registerTypeAdapter(authority.class,new authority.authority_type_deserializer());
         mGsonBuilder.registerTypeAdapter(full_account_object.class,new full_account_object.deserializer());
+        mGsonBuilder.registerTypeAdapter(CallReceiveModel.class,new CallReceiveModel.CallReceiveModelDeserializer());
+        mGsonBuilder.registerTypeAdapter(NoticeReciveParamsModel.class,new NoticeReciveParamsModel.NoticeReciveParamsModelDeserializer());
+        mGsonBuilder.registerTypeAdapter(block_object.class,new block_object.block_object_deserializer());
         //mGsonBuilder.setDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
         // register serializer
+        mGsonBuilder.registerTypeAdapter(SendParamModel.class, new SendParamModel.SendParamModelSerializer());
         mGsonBuilder.registerTypeAdapter(operations.operation_type.class, new operations.operation_type.operation_type_serializer());
         mGsonBuilder.registerTypeAdapter(compact_signature.class, new compact_signature.compact_signature_serializer());
         mGsonBuilder.registerTypeAdapter(UnsignedInteger.class, new unsigned_number_serializer.UnsigendIntegerSerializer());
