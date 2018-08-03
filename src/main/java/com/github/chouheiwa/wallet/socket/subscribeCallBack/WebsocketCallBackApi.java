@@ -6,7 +6,6 @@ import com.github.chouheiwa.wallet.socket.subscribeCallBack.ReceiveModel.BlockIn
 import com.github.chouheiwa.wallet.socket.subscribeCallBack.ReceiveModel.CallReceiveModel;
 import com.github.chouheiwa.wallet.socket.websocketClient.websocketClient;
 import com.github.chouheiwa.wallet.socket.websocketClient.websocketInterface;
-import com.github.chouheiwa.wallet.utils.GsonUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -16,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class WebsocketCallBackApi implements websocketInterface {
+public abstract class WebsocketCallBackApi implements websocketInterface  {
 
     private Integer dataBaseId = -1;
 
@@ -46,6 +45,12 @@ public class WebsocketCallBackApi implements websocketInterface {
         return true;
     }
 
+    /**
+     * 当错误发生的时候(一般是区块链连接异常)
+     * @param e 异常
+     */
+    public abstract void onErrorException(Exception e);
+
     @Override
     public void onOpen() {
         opening = true;
@@ -61,6 +66,8 @@ public class WebsocketCallBackApi implements websocketInterface {
 
         CallBackUploadAbstractModel model = hashMap.get(callReceiveModel.getId());
 
+        System.out.println(resultMsg);
+
         if (model != null) {
             if (callReceiveModel.callBackRecvModel != null) model.reciveCallMessage(callReceiveModel.callBackRecvModel.result);
             if (callReceiveModel.noticeRecvModel != null) model.reciveNoticeMessage(callReceiveModel.noticeRecvModel.params.detailParams);
@@ -72,6 +79,7 @@ public class WebsocketCallBackApi implements websocketInterface {
     @Override
     public void onError(Exception e) {
         opening = false;
+        this.onErrorException(e);
     }
 
     /**

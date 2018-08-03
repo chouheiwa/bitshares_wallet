@@ -16,13 +16,13 @@ import com.github.chouheiwa.wallet.socket.market.MarketTicker;
 import com.github.chouheiwa.wallet.socket.market.OrderBook;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.github.chouheiwa.wallet.utils.NumberUtils;
 import com.github.chouheiwa.wallet.net.model.AllHistory;
 import com.github.chouheiwa.wallet.net.model.HistoryResponseModel;
 import org.bitcoinj.core.ECKey;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -343,10 +343,6 @@ public class wallet_api {
         return mWebsocketApi.get_accounts(listAccountObjectId);
     }
 
-    public String get_Fee(String id, int op) throws NetworkStatusException {
-        return mWebsocketApi.get_Fee(id, op);
-    }
-
     public List<account_object> lookup_account_names(String strAccountName) throws NetworkStatusException {
         return mWebsocketApi.lookup_account_names(strAccountName);
     }
@@ -408,14 +404,6 @@ public class wallet_api {
         return mWebsocketApi.get_chain_id();
     }
 
-    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException,Exception {
-        return mWebsocketApi.get_transfer_history(accountId, nLimit);
-    }
-
-    public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountId, int nLimit,String flag) throws NetworkStatusException, JSONException,Exception {
-        return mWebsocketApi.get_transfer_history_by_flag(accountId, nLimit,flag);
-    }
-
     public List<asset_object> list_assets_obj(String strLowerBound, int nLimit) throws NetworkStatusException {
         return mWebsocketApi.list_assets(strLowerBound, nLimit);
     }
@@ -434,10 +422,6 @@ public class wallet_api {
 
     public asset_object lookup_asset_symbols(String strAssetSymbol) throws NetworkStatusException {
         return mWebsocketApi.lookup_asset_symbols(strAssetSymbol);
-    }
-
-    public String lookup_asset_symbols_rate(String strAssetSymbol) throws NetworkStatusException {
-        return mWebsocketApi.lookup_asset_symbols_rate(strAssetSymbol);
     }
 
     public int import_brain_key(String strAccountNameOrId, String strBrainKey) throws NetworkStatusException,NoSuchAlgorithmException,UnsupportedEncodingException {
@@ -1593,16 +1577,16 @@ public class wallet_api {
         return mWebsocketApi.get_limit_orders(base, quote, limit);
     }
 
-    public String get_bitasset_data(String symbol) throws NetworkStatusException {
+    public JsonElement get_bitasset_data(String symbol) throws NetworkStatusException {
         asset_object asset = lookup_asset_symbols(symbol);
 
         if (asset.bitasset_data_id == null) return null;
 
-        return mWebsocketApi.get_object(asset.bitasset_data_id.toString());
+        return mWebsocketApi.get_object(asset.bitasset_data_id);
     }
 
-    public String get_object(String object) throws NetworkStatusException {
-        return mWebsocketApi.get_object(object);
+    public JsonElement get_object(String object) throws NetworkStatusException {
+        return mWebsocketApi.get_object(object_id.create_from_string(object));
     }
 
     public AllHistory get_all_history(String baseSymbolId, String qouteSymbolId, int nLimit)
@@ -1623,11 +1607,6 @@ public class wallet_api {
     public HashMap<types.public_key_type, types.private_key_type> get_wallet_hash() {
         return mHashMapPub2Priv;
     }
-
-    public boolean is_public_key_registered(String pub_key) throws NetworkStatusException {
-        return mWebsocketApi.is_public_key_registered(pub_key);
-    }
-
     //生成公私钥对
     public Map<private_key, public_key> generateKeyFromPassword(String account_name, String password) {
         Map<private_key, public_key> keys = new HashMap<private_key, public_key>();
@@ -1638,8 +1617,5 @@ public class wallet_api {
             keys.put(privKey, pubKey);
         }
         return keys;
-    }
-    public operations.operation_type get_history_object(Integer object) throws NetworkStatusException {
-        return mWebsocketApi.get_history_object(object);
     }
 }

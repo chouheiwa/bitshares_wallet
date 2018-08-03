@@ -8,24 +8,10 @@ import com.github.chouheiwa.wallet.socket.common.ErrorCode;
 import com.github.chouheiwa.wallet.socket.exception.NetworkStatusException;
 import com.github.chouheiwa.wallet.socket.fc.crypto.sha256_object;
 import com.github.chouheiwa.wallet.socket.market.MarketTicker;
-//import de.bitsharesmunich.graphenej.Address;
-//import de.bitsharesmunich.graphenej.Asset;
-//import de.bitsharesmunich.graphenej.FileBin;
-//import de.bitsharesmunich.graphenej.models.backup.LinkedAccount;
-//import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
-import com.github.chouheiwa.wallet.constants.OwnerInfoConstant;
-import com.github.chouheiwa.wallet.socket.chain.*;
-import com.github.chouheiwa.wallet.socket.common.ErrorCode;
-import com.github.chouheiwa.wallet.socket.exception.NetworkStatusException;
-import com.github.chouheiwa.wallet.socket.fc.crypto.sha256_object;
-import com.github.chouheiwa.wallet.socket.market.MarketTicker;
 import com.github.chouheiwa.wallet.socket.market.OrderBook;
-import org.json.JSONException;
+import com.google.gson.JsonElement;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -303,15 +289,7 @@ public class BitsharesWalletWraper {
         return mWalletApi.lookup_asset_symbols(strAssetSymbol);
     }
 
-    public String lookup_asset_symbols_rate(String strAssetSymbol) throws Exception {
-        return mWalletApi.lookup_asset_symbols_rate(strAssetSymbol);
-    }
-
-    public String  get_Fee(String id,int op)  throws Exception  {
-        return mWalletApi.get_Fee(id,op);
-    }
-
-    public String get_object(String object) throws Exception {
+    public JsonElement get_object(String object) throws Exception {
         return mWalletApi.get_object(object);
     }
 
@@ -595,11 +573,6 @@ public class BitsharesWalletWraper {
     public HashMap<types.public_key_type, types.private_key_type> get_wallet_hash() {
         return  mWalletApi.get_wallet_hash();
     }
-
-    public boolean is_public_key_registered(String pub_key) throws Exception {
-        return mWalletApi.is_public_key_registered(pub_key);
-    }
-
     //查询矿池总量
     public long get_witness_budget() throws Exception {
         long witness_budget = 0;
@@ -654,17 +627,6 @@ public class BitsharesWalletWraper {
 
         return mWalletApi.get_account_history_with_last_id(id_object,nLimit,id);
     }
-
-
-    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountObjectId,
-                                                                    int nLimit) throws Exception ,JSONException {
-        List<HistoryResponseModel.DataBean> listHistoryObject;
-
-        listHistoryObject = mWalletApi.get_transfer_history(accountObjectId, nLimit);
-
-        return listHistoryObject;
-    }
-
     /**
      * 24小时成交记录
      * @param base 基础币种
@@ -676,7 +638,7 @@ public class BitsharesWalletWraper {
         return mWalletApi.get_ticker(base, quote);
     }
 
-    public String get_bitasset_data(String symbol) throws Exception {
+    public JsonElement get_bitasset_data(String symbol) throws Exception {
         return mWalletApi.get_bitasset_data(symbol);
     }
 
@@ -686,9 +648,6 @@ public class BitsharesWalletWraper {
 
     public OrderBook get_order_book(String base, String quote, int limit) throws  Exception{
         return  mWalletApi.get_order_book(base,quote,limit);
-    }
-    public operations.operation_type get_history_object(Integer object) throws NetworkStatusException {
-        return mWalletApi.get_history_object(object);
     }
     @Override
     protected void finalize() throws Throwable {

@@ -9,18 +9,12 @@ import com.github.chouheiwa.wallet.socket.exception.NetworkStatusException;
 import com.github.chouheiwa.wallet.socket.fc.crypto.sha256_object;
 import com.github.chouheiwa.wallet.socket.market.MarketTicker;
 import com.github.chouheiwa.wallet.socket.market.OrderBook;
-import com.github.chouheiwa.wallet.socket.websocketClient.websocketClient;
-import com.github.chouheiwa.wallet.socket.websocketClient.websocketInterface;
-import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.github.chouheiwa.wallet.net.model.AllHistory;
-import com.github.chouheiwa.wallet.net.model.HistoryResponseModel;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,17 +24,13 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.chouheiwa.wallet.socket.common.ErrorCode.ERROR_CONNECT_SERVER_FAILD;
-
 public class websocket_api implements websocketInterface {
-    protected  final Logger log = LoggerFactory.getLogger(this.getClass());
+    protected final Logger log = LoggerFactory.getLogger(this.getClass());
     private int _nDatabaseId = -1;
     private int _nHistoryId = -1;
     private int _nBroadcastId = -1;
 
     private websocketClient mWebsocket;
-//    private OkHttpClient mOkHttpClient;
-//    private WebSocket mWebsocket;
 
     private int mnConnectStatus = WEBSOCKET_CONNECT_INVALID;
     private int mnCliConnectStatus = WEBSOCKET_CONNECT_INVALID;
@@ -664,151 +654,6 @@ public class websocket_api implements websocketInterface {
         }
     }
 
-    //查询转账交易列表
-    public List<HistoryResponseModel.DataBean> get_transfer_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException, JSONException,Exception {
-        _nHistoryId = get_history_api_id();
-        BitsharesWalletWraper bww = new BitsharesWalletWraper();
-        List<asset_object> objAssets = bww.list_assets_obj("", 100);
-        if (objAssets == null) {
-            return null;
-        }
-        List<HistoryResponseModel.DataBean> list = new ArrayList<HistoryResponseModel.DataBean>();
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nHistoryId);
-        callObject.params.add("get_account_history");
-
-        List<Object> listAccountHistoryParam = new ArrayList<>();
-        listAccountHistoryParam.add(accountId);
-        listAccountHistoryParam.add("1.11.0");
-        listAccountHistoryParam.add(nLimit);
-        listAccountHistoryParam.add("1.11.0");
-        callObject.params.add(listAccountHistoryParam);
-
-        ReplyObjectProcess<Reply<List<operation_history_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<operation_history_object>>>(){}.getType());
-        Reply<List<operation_history_object>> replyAccountHistory = sendForReply(callObject, replyObject);
-        if (replyAccountHistory == null) {
-            List<HistoryResponseModel.DataBean> Obj = new ArrayList<HistoryResponseModel.DataBean>();
-            return Obj;
-        } else {
-            String jsonRpc = replyObject.getResponse();
-            try {
-                JSONObject jsonObject = new JSONObject(jsonRpc);
-                JSONArray jsonArray = jsonObject.optJSONArray("result");
-                HistoryResponseModel.DataBean dataBean = null;
-                for (int i = 0; i < jsonArray.length(); i++){
-                    JSONObject jsonObject1 = jsonArray.optJSONObject(i);
-                    JSONArray jsonArray1 = jsonObject1.optJSONArray("op");
-
-                    if (jsonArray1.getString(0).equalsIgnoreCase("0")){
-                        dataBean = new HistoryResponseModel.DataBean();
-                        String block_order_id = jsonObject1.optString("id");
-                        JSONObject jsonObject2 = jsonArray1.getJSONObject(1);
-                        String fromId = jsonObject2.optString("from");
-                        String toId = jsonObject2.optString("to");
-                        String amount = jsonObject2.optJSONObject("amount").optString("amount");
-                        String type =  jsonObject2.optJSONObject("amount").optString("asset_id");
-                        dataBean.setId(block_order_id);
-                        for (asset_object objAsset : objAssets){
-                            if (objAsset.id.toString().equalsIgnoreCase(type)){
-                                dataBean.setSymbol(objAsset.symbol);
-                                asset_object.asset_object_legible myasset = objAsset.get_legible_asset_object(Long.parseLong(amount));
-                                dataBean.setAmount(NumberUtils.formatNumber(myasset.count));
-                                String sFromName =  get_account(fromId).name;
-                                String sToName = get_account(toId).name;
-                                dataBean.setFrom(sFromName);
-                                dataBean.setTo(sToName);
-                                list.add(dataBean);
-                            }
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return list;
-            }
-            return list;
-        }
-    }
-
-    //查询转账交易列表
-    public List<HistoryResponseModel.DataBean> get_transfer_history_by_flag(object_id<account_object> accountId, int nLimit,String lastBlockIndex) throws NetworkStatusException, JSONException,Exception {
-        _nHistoryId = get_history_api_id();
-        BitsharesWalletWraper bww = new BitsharesWalletWraper();
-        List<asset_object> objAssets = bww.list_assets_obj("", 100);
-        if (objAssets == null) {
-            return null;
-        }
-        List<HistoryResponseModel.DataBean> list = new ArrayList<HistoryResponseModel.DataBean>();
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nHistoryId);
-        callObject.params.add("get_account_history");
-
-        List<Object> listAccountHistoryParam = new ArrayList<>();
-        listAccountHistoryParam.add(accountId);
-        listAccountHistoryParam.add("1.11.0");
-        listAccountHistoryParam.add(nLimit);
-        if(null == lastBlockIndex || "".equals(lastBlockIndex)){
-            listAccountHistoryParam.add("1.11.0");
-        }else{
-            listAccountHistoryParam.add(lastBlockIndex);
-        }
-        callObject.params.add(listAccountHistoryParam);
-
-        ReplyObjectProcess<Reply<List<operation_history_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<operation_history_object>>>(){}.getType());
-        Reply<List<operation_history_object>> replyAccountHistory = sendForReply(callObject, replyObject);
-        if (replyAccountHistory == null) {
-            List<HistoryResponseModel.DataBean> Obj = new ArrayList<HistoryResponseModel.DataBean>();
-            return Obj;
-        } else {
-            String jsonRpc = replyObject.getResponse();
-            try {
-                JSONObject jsonObject = new JSONObject(jsonRpc);
-                JSONArray jsonArray = jsonObject.optJSONArray("result");
-                HistoryResponseModel.DataBean dataBean = null;
-                for (int i = 0; i < jsonArray.length(); i++){
-                    JSONObject jsonObject1 = jsonArray.optJSONObject(i);
-                    JSONArray jsonArray1 = jsonObject1.optJSONArray("op");
-                    String block_order_id = jsonObject1.optString("id");
-                    if (jsonArray1.getString(0).equalsIgnoreCase("0")){
-                        dataBean = new HistoryResponseModel.DataBean();
-                        JSONObject jsonObject2 = jsonArray1.getJSONObject(1);
-                        String fromId = jsonObject2.optString("from");
-                        String toId = jsonObject2.optString("to");
-                        String amount = jsonObject2.optJSONObject("amount").optString("amount");
-                        String type =  jsonObject2.optJSONObject("amount").optString("asset_id");
-                        String memo = jsonObject2.optString("memo");
-                        dataBean.setId(block_order_id);
-                        dataBean.setMemo(memo);
-                        for (asset_object objAsset : objAssets){
-                            if (objAsset.id.toString().equalsIgnoreCase(type)){
-                                dataBean.setSymbol(objAsset.symbol);
-                                asset_object.asset_object_legible myasset = objAsset.get_legible_asset_object(Long.parseLong(amount));
-                                dataBean.setAmount(NumberUtils.formatNumber(myasset.count));
-                                String sFromName =  get_account(fromId).name;
-                                String sToName = get_account(toId).name;
-                                dataBean.setFrom(sFromName);
-                                dataBean.setTo(sToName);
-                                list.add(dataBean);
-                            }
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return list;
-            }
-            return list;
-        }
-    }
-
     public global_property_object get_global_properties() throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
         Call callObject = new Call();
@@ -902,74 +747,6 @@ public class websocket_api implements websocketInterface {
         }
     }
 
-    public String lookup_asset_symbols_rate(String strAssetSymbol) throws NetworkStatusException {
-        _nDatabaseId = get_database_api_id();
-        String result = "";
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("lookup_asset_symbols");
-        List<Object> listAssetsParam = new ArrayList<>();
-        List<Object> listAssetSysmbols = new ArrayList<>();
-        listAssetSysmbols.add(strAssetSymbol);
-        listAssetsParam.add(listAssetSysmbols);
-        callObject.params.add(listAssetsParam);
-
-        ReplyObjectProcess<Reply<List<asset_object>>> replyObjectProcess =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<asset_object>>>(){}.getType());
-        Reply<List<asset_object>> replyObject = sendForReply(callObject, replyObjectProcess);
-        if (replyObject == null) {
-            return "0";
-        } else {
-            String jsonRpc = replyObjectProcess.getResponse();
-            double nRate = 0.0;
-            JSONObject jsonobj = null;
-            JSONArray jarray = null;
-            JSONObject job = null;
-            try {
-                jsonobj = new JSONObject(jsonRpc);
-                jarray = jsonobj.getJSONArray("result");
-                job = jarray.getJSONObject(0);
-                String asset_cur_id = job.getString("id");
-                int precision = job.getInt("precision");
-                double base_amount = job.getJSONObject("options").getJSONObject("core_exchange_rate").getJSONObject("base").getDouble("amount");
-                String base_asset_id = job.getJSONObject("options").getJSONObject("core_exchange_rate").getJSONObject("base").getString("asset_id");
-                double quote_amount = job.getJSONObject("options").getJSONObject("core_exchange_rate").getJSONObject("quote").getDouble("amount");
-                String quote_asset_id = job.getJSONObject("options").getJSONObject("core_exchange_rate").getJSONObject("quote").getString("asset_id");
-
-                int targetPrec = 1;
-                int bdsPrec = 1;
-                //cacle other symbol precision
-                if (precision <= 1){
-                    return "0";
-                }
-                for (int i = 0; i < precision; i++) {
-                    targetPrec *= 10;
-                }
-                //cacle bds symbol precision
-                for (int n = 0; n < 5; n++) {
-                    bdsPrec *= 10;
-                }
-                //cacle base and quote precent
-                if (base_asset_id.equals("1.3.0")) {
-                    //base is BDS
-                    nRate = (quote_amount / targetPrec) / (base_amount / bdsPrec);
-                } else if (quote_asset_id.equals("1.3.0")) {
-                    //quote is BDS
-                    nRate = (base_amount / targetPrec) / (quote_amount / bdsPrec);
-                }
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return "0";
-            }
-            result = nRate + "";
-            return result;
-        }
-    }
-
     public asset_object lookup_asset_symbols(String strAssetSymbol) throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
         Call callObject = new Call();
@@ -1022,7 +799,7 @@ public class websocket_api implements websocketInterface {
     //查询区块信息
     public block_object get_block(int nBlockNumber) throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
-        block_object block = new block_object();
+
         Call callObject = new Call();
         callObject.id = mnCallId.getAndIncrement();
         callObject.method = "call";
@@ -1033,42 +810,19 @@ public class websocket_api implements websocketInterface {
         listBlockNumber.add(nBlockNumber);
         callObject.params.add(listBlockNumber);
 
-
-
-
-
-
-
-
-        ReplyObjectProcess<Reply<block_header>> replyObjectProcess =
-                new ReplyObjectProcess<>(new TypeToken<Reply<block_header>>(){}.getType());
-        Reply<block_header> replyObject = sendForReply(callObject, replyObjectProcess);
+        ReplyObjectProcess<Reply<block_object>> replyObjectProcess =
+                new ReplyObjectProcess<>(new TypeToken<Reply<block_object>>(){}.getType());
+        Reply<block_object> replyObject = sendForReply(callObject, replyObjectProcess);
         if (replyObject == null) {
-            block_object obj = new block_object();
-            return obj;
+            return null;
         } else {
             String sBlock = replyObjectProcess.getResponse();
             if (sBlock != null) {
                 try {
-                    JSONObject jsonobj = new JSONObject(sBlock);
-                    JSONObject dataobj = jsonobj.getJSONObject("result");
+                    block_object block = replyObject.result;
                     block.blockNumber = nBlockNumber + "";
-                    String date = TimeUtils.utc2Local(dataobj.getString("timestamp").replace("T"," "));
-                    block.timeStame = date;
-
-                    block.witnessId = dataobj.getString("witness");
-                    JSONArray jarray = dataobj.getJSONArray("transactions");
-                    block.transactionCount = jarray.length();
-                    block.transaction_ids = new ArrayList<>();
-                    for (int i =0; i < jarray.length();i ++) {
-                        String json =  jarray.getString(i);
-                        Gson gson = global_config_object.getInstance().getGsonBuilder().create();
-                        transaction trans = gson.fromJson(json,transaction.class);
-
-                        block.transaction_ids.add(trans.ids().toString().substring(0,40));
-                    }
                     return block;
-                } catch (JSONException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -1261,90 +1015,9 @@ public class websocket_api implements websocketInterface {
         }
     }
 
-    //获取手续费
-    public String get_Fee(String id, int op)  throws NetworkStatusException {
-        _nDatabaseId = get_database_api_id();
-        String sFee = "0";
-        String strResopnse = null;
-        object_id<asset_object> ObjectId = object_id.create_from_string(id);
-        List<object_id<asset_object>> ids = new ArrayList<>();
-        ids.add(ObjectId);
-
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("get_objects");
-
-        List<Object> listParams = new ArrayList<>();
-        listParams.add(ids);
-        callObject.params.add(listParams);
-
-        ReplyObjectProcess<Reply<List<limit_order_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>(){}.getType());
-        Reply<List<limit_order_object>> obj = sendForReply(callObject, replyObject);
-        if (obj == null ) {
-            strResopnse = replyObject.getResponse();
-        } else {
-            strResopnse = replyObject.getResponse();
-            if (strResopnse != null && !strResopnse.isEmpty()) {
-                try {
-                    JSONObject jsonObject = new JSONObject(strResopnse);
-                    JSONArray jArrayResult = jsonObject.getJSONArray("result");
-                    if (jArrayResult != null && jArrayResult.length() > 0) {
-                        JSONObject jsonObject1 = jArrayResult.getJSONObject(0);
-                        JSONArray jArrayParams = jsonObject1.getJSONObject("parameters").getJSONObject("current_fees").getJSONArray("parameters");
-                        if (jArrayParams != null && jArrayParams.length() > 0) {
-
-                            if (op < jArrayParams.length()) {
-                                JSONArray jArrayFees = jArrayParams.getJSONArray(op);
-                                if (jArrayFees.getInt(0) == op) {
-                                    JSONObject fee_obj = jArrayFees.getJSONObject(1);
-                                    switch (op) {
-                                        case operations.ID_TRANSER_OPERATION:
-                                            long transfer_fee =  fee_obj.getLong("fee");
-                                            if (transfer_fee > 0) {
-                                                sFee = CalculateUtils.div(Double.parseDouble(transfer_fee+""),100000,5);
-                                            }
-                                            break;
-                                        case operations.ID_UPGRADE_ACCOUNT_OPERATION:
-                                            long liftetime_fee = fee_obj.getLong("membership_lifetime_fee");
-                                            if (liftetime_fee > 0) {
-                                                sFee = CalculateUtils.div(Double.parseDouble(liftetime_fee+""),100000,5);
-                                            }
-                                            break;
-                                        case operations.ID_ACCOUNT_WHITELIST_OPERATION:
-                                            long fee = fee_obj.getLong("membership_lifetime_fee");
-                                            if (fee > 0) {
-                                                sFee = CalculateUtils.div(Double.parseDouble(fee+""),100000,5);
-                                            }
-                                            break;
-                                        case operations.ID_UPDATE_LMMIT_ORDER_OPERATION:
-                                        case operations.ID_VESTING_WITHDRAW_OPERATION:
-                                            long vest_fee =  fee_obj.getLong("fee");
-                                            if (vest_fee > 0) {
-                                                sFee = CalculateUtils.div(Double.parseDouble(vest_fee+""),100000,5);
-                                            }
-                                            break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    return "0";
-                }
-            }
-        }
-        return sFee;
-    }
-
-    public String get_object(String id)  throws NetworkStatusException {
+    public JsonElement get_object(object_id ObjectId)  throws NetworkStatusException {
         _nDatabaseId = get_database_api_id();
         String strResopnse = null;
-        object_id ObjectId = object_id.create_from_string(id);
         List<object_id> ids = new ArrayList<>();
         ids.add(ObjectId);
 
@@ -1363,14 +1036,15 @@ public class websocket_api implements websocketInterface {
                 new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>(){}.getType());
         Reply<List<limit_order_object>> obj = sendForReply(callObject, replyObject);
         strResopnse = replyObject.getResponse();
+
+        Gson gson = new Gson();
+
+        JsonElement jsonElement = gson.toJsonTree(strResopnse);
         try {
-            JSONObject jsonObject = new JSONObject(strResopnse);
-            JSONArray jArrayResult = jsonObject.getJSONArray("result");
-            return jArrayResult.get(0).toString();
-        } catch (JSONException e) {
+            return jsonElement.getAsJsonObject().get("result").getAsJsonArray().get(0);
+        } catch (Exception e) {
             return null;
         }
-
     }
 
 
@@ -1545,138 +1219,6 @@ public class websocket_api implements websocketInterface {
         }
     }
 
-    public boolean is_public_key_registered(String pub_key) throws NetworkStatusException {
-        _nDatabaseId = get_database_api_id();
-        boolean isRegistered = false;
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("is_public_key_registered");
-
-        List<Object> listParams = new ArrayList<>();
-        listParams.add(pub_key);
-        callObject.params.add(listParams);
-
-        ReplyObjectProcess<Reply<List<limit_order_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>(){}.getType());
-        String strResp = null;
-        try {
-            strResp = sendForJsonReply(callObject, replyObject);
-        } catch (Exception e) {
-            strResp = replyObject.getResponse();
-        }
-        if (strResp == null)
-            strResp = replyObject.getResponse();
-
-        if (strResp != null && !strResp.isEmpty()) {
-            try {
-                JSONObject jsonObject = new JSONObject(strResp);
-                String strResult = jsonObject.getString("result");
-                if (strResult.equals("false"))
-                    isRegistered = false;
-                else
-                    isRegistered = true;
-            } catch (JSONException e) {
-                e.printStackTrace();
-                isRegistered = false;
-            }
-        }
-        return isRegistered;
-    }
-
-    public List<vesting_balance_object> get_vesting_balances(String name) throws NetworkStatusException {
-        _nDatabaseId = get_database_api_id();
-        List<vesting_balance_object> vestingList = null;
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("get_vesting_balances");
-
-        List<Object> listParams = new ArrayList<>();
-        listParams.add(name);
-        callObject.params.add(listParams);
-
-        ReplyObjectProcess<Reply<List<limit_order_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>() {}.getType());
-        String strResp;
-        try {
-            strResp = sendForJsonReply(callObject, replyObject);
-        } catch (Exception e) {
-            strResp = replyObject.getResponse();
-        }
-        if (strResp == null)
-            strResp = replyObject.getResponse();
-        if (strResp != null) {
-            try {
-                JSONObject jsonObject = new JSONObject(strResp);
-                JSONArray jsonArray = jsonObject.getJSONArray("result");
-                if (jsonArray.length() > 0) {
-                    vestingList = new ArrayList<vesting_balance_object>();
-                    for (int i = 0 ; i< jsonArray.length(); i++) {
-                        JSONObject obj = jsonArray.getJSONObject(i);
-                        if (obj != null) {
-                            String id = obj.getString("id");
-                            String owner = obj.getString("owner");
-                            long balance_amount = obj.getJSONObject("balance").getLong("amount");
-                            if (balance_amount>0) {
-                                String balance_asset_id = obj.getJSONObject("balance").getString("asset_id");
-                                JSONArray policyArray = obj.getJSONArray("policy");
-                                if (policyArray.length() > 0) {
-                                    long vesting_seconds = policyArray.getJSONObject(1).getLong("vesting_seconds");
-                                    long coin_seconds_earned = policyArray.getJSONObject(1).getLong("coin_seconds_earned");
-                                    String strTotal = CalculateUtils.mul(balance_amount, vesting_seconds);
-                                    double nTotal = Double.parseDouble(strTotal);
-
-                                    String strPersent = CalculateUtils.div(coin_seconds_earned, nTotal, 12);
-                                    double availablePercent = Double.parseDouble(strPersent);
-                                    double allowedAmount = Double.parseDouble(CalculateUtils.mul(balance_amount, availablePercent));
-
-                                    //coin_seconds_earned/(60*60*24)
-                                    double coin_days_earned = Double.parseDouble(CalculateUtils.div(coin_seconds_earned, 86400, 12));
-
-                                    //balance_amount*vesting_seconds/(60*60*24)
-                                    double coin_days_required = Double.parseDouble(CalculateUtils.div(Double.parseDouble(strTotal), 86400, 12));
-
-                                    //vesting_seconds*(1-availablePercent)/(60*60*24)
-                                    double vesting_period = Double.parseDouble(CalculateUtils.div(Double.parseDouble(CalculateUtils.mul(vesting_seconds, CalculateUtils.sub(1,availablePercent))), 86400, 2));
-
-                                    vesting_balance_object vesting = new vesting_balance_object();
-                                    vesting.vesting_seconds = vesting_seconds+"";
-                                    vesting.id = object_id.create_from_string(id);
-                                    vesting.owner = owner;
-                                    vesting.TotalBalance = CalculateUtils.div(balance_amount, 100000, 5);
-                                    vesting.AvailablePersent = CalculateUtils.div(availablePercent,1,4);
-                                    vesting.Available_to_claim = CalculateUtils.div(allowedAmount, 100000, 5);
-                                    vesting.coin_seconds_earned = coin_seconds_earned;
-                                    vesting.coin_days_earned = CalculateUtils.div(coin_days_earned, 100000, 0);
-                                    vesting.coin_days_required = CalculateUtils.div(coin_days_required, 100000, 0);
-                                    vesting.vesting_period = vesting_period+"";
-                                    vestingList.add(vesting);
-                                }
-                            } else {
-                                vesting_balance_object vesting = new vesting_balance_object();
-                                vesting.id = object_id.create_from_string(id);
-                                vesting.owner = owner;
-                                vesting.TotalBalance = "0";
-                                vesting.AvailablePersent = "0";
-                                vesting.Available_to_claim = "0.00000";
-                                vestingList.add(vesting);
-                            }
-                        }
-                    }
-                    return vestingList;
-                }
-            } catch (JSONException e) {
-                return null;
-            }
-        }
-        return vestingList;
-    }
-
     public AllHistory get_all_history(String baseSymbolId, String qouteSymbolId, int nLimit) throws NetworkStatusException {
         _nHistoryId = get_history_api_id();
         Call callObject = new Call();
@@ -1749,56 +1291,5 @@ public class websocket_api implements websocketInterface {
         } else {
             return replyObject.result;
         }
-    }
-
-    public operations.operation_type get_history_object(Integer object) throws NetworkStatusException {
-        _nDatabaseId = get_database_api_id();
-        Call callObject = new Call();
-        callObject.id = mnCallId.getAndIncrement();
-        callObject.method = "call";
-        callObject.params = new ArrayList<>();
-        callObject.params.add(_nDatabaseId);
-        callObject.params.add("get_objects");
-
-        List<Object> listParams = new ArrayList<>();
-        List list = new ArrayList();
-
-        list.add("1.11." + object);
-
-        listParams.add(list);
-        callObject.params.add(listParams);
-
-        ReplyObjectProcess<Reply<List<limit_order_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<limit_order_object>>>() {}.getType());
-        String strResp;
-        try {
-            strResp = sendForJsonReply(callObject, replyObject);
-        } catch (Exception e) {
-            strResp = replyObject.getResponse();
-        }
-
-        if (strResp == null)
-            strResp = replyObject.getResponse();
-        if (strResp != null) {
-            try {
-                JSONObject jsonObject = null;
-                jsonObject = new JSONObject(strResp);
-                JSONArray jsonArray = jsonObject.getJSONArray("result");
-
-                if (jsonArray.length() > 0) {
-                    JSONObject obj = jsonArray.getJSONObject(0);
-
-                    Gson gson = global_config_object.getInstance().getGsonBuilder().create();
-
-                    operations.operation_type operation_type = gson.fromJson(obj.getJSONArray("op").toString(), operations.operation_type.class);
-
-                    return operation_type;
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }
-        return null;
     }
 }

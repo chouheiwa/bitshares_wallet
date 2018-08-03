@@ -9,7 +9,6 @@ import com.github.chouheiwa.wallet.socket.subscribeCallBack.SendParamModel;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.GsonBuilder;
-import com.github.chouheiwa.wallet.socket.common.*;
 import com.github.chouheiwa.wallet.socket.fc.crypto.ripemd160_object;
 import com.github.chouheiwa.wallet.socket.fc.crypto.sha256_object;
 
@@ -44,6 +43,7 @@ public class global_config_object {
         mGsonBuilder.registerTypeAdapter(CallReceiveModel.class,new CallReceiveModel.CallReceiveModelDeserializer());
         mGsonBuilder.registerTypeAdapter(NoticeReciveParamsModel.class,new NoticeReciveParamsModel.NoticeReciveParamsModelDeserializer());
         mGsonBuilder.registerTypeAdapter(block_object.class,new block_object.block_object_deserializer());
+        mGsonBuilder.registerTypeAdapter(BlockOperationsResult.class,new BlockOperationsResult.BlockOperationsResultDeserializer());
         //mGsonBuilder.setDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
         // register serializer

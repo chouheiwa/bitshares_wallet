@@ -2,8 +2,6 @@ package com.github.chouheiwa.wallet.socket.chain;
 
 import com.github.chouheiwa.wallet.utils.TimeUtils;
 import com.google.gson.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -16,6 +14,7 @@ public class block_object {
         public int transactionCount;
         public ArrayList<String> transaction_ids;
         public List<transaction> transactions;
+
 
         public static class block_object_deserializer implements JsonDeserializer<block_object> {
 
@@ -39,6 +38,7 @@ public class block_object {
 
                                 block.transactions.add(trans);
                         }
+
                         return block;
                 }
         }

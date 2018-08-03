@@ -44,6 +44,8 @@ public class transaction {
     public List<com.github.chouheiwa.wallet.socket.chain.operations.operation_type> operations;
     public Set<types.void_t> extensions;
 
+    public List<BlockOperationsResult> operation_results;
+
     public ripemd160_object id() {
         return null;
     }
