@@ -45,6 +45,10 @@ public abstract class WebsocketCallBackApi implements websocketInterface  {
         return true;
     }
 
+    public void close() {
+        mWebsocket.close();
+    }
+
     /**
      * 当错误发生的时候(一般是区块链连接异常)
      * @param e 异常
