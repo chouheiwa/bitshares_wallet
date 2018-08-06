@@ -90,6 +90,16 @@ public class websocket_api implements websocketInterface {
         }
     }
 
+    @Override
+    public void onClose(int i, String s, boolean b) {
+        if (mWebsocket != null){
+            synchronized (mWebsocket) {
+                mnConnectStatus = WEBSOCKET_CONNECT_FAIL;
+                mWebsocket.notify();
+            }
+        }
+    }
+
     class WebsocketError {
         int code;
         String message;

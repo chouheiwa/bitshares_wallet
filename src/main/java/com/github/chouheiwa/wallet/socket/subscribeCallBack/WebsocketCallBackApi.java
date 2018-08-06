@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,8 +83,13 @@ public abstract class WebsocketCallBackApi implements websocketInterface  {
 
     @Override
     public void onError(Exception e) {
-        opening = false;
         this.onErrorException(e);
+    }
+
+    @Override
+    public void onClose(int i, String s, boolean b) {
+        this.close();
+        this.onErrorException(new IOException());
     }
 
     /**

@@ -12,7 +12,7 @@ It can be used in maven.
 
 Simple usage:
 
-Now the latest version is 2.1.0
+Now the latest version is 2.1.10
 
 If you want to use it in your project,you should
 
@@ -21,7 +21,7 @@ If you want to use it in your project,you should
 <dependency>
             <groupId>com.github.chouheiwa</groupId>
             <artifactId>wallet</artifactId>
-            <version>2.1.0</version>
+            <version>2.1.10</version>
 </dependency>
 ```
 2. Use class BitsharesWalletWrapper
@@ -38,18 +38,37 @@ I add new class to subcribe function to block chain.
 
 Use class **WebsocketCallBackApi**
 ```
-WebsocketCallBackApi callBackApi = new WebsocketCallBackApi();
-//var m is the result of the connection.
-Boolean m = callBackApi.setWebsocket_server("ws://192.168.1.1:8080");
+public class test {
+    public static WebsocketCallBackApi callBackApi;
+    public static void main(String[] ss) {
+        //初始化抽象类时需要发布异常处理
+        callBackApi = new WebsocketCallBackApi() {
+            @Override
+            public void onErrorException(Exception e) {
 
-callBackApi.registerReceive(new ReceiveActionInterface() {
-//This function give the latest block_object when the first time network connected.
-     @Override
-     public void onReceiveBlockAction(block_object block_object) {
-     //Do something you want to do when you recevie new block.
-     //The block_object.transactions was the detail of the block's operation such as transfer,limit order
-        System.out.println(GsonUtil.GsonString(block_object));
-     }
-});
+            }
+        };
 
+        callBackApi.connect("ws://127.0.0.1:8056");
+
+        callBackApi.registerReceive(new ReceiveActionInterface() {
+            @Override
+            public void onReceiveBlockAction(block_object block_object) {
+                //收到最新区块后获取最新区块对象
+                /**
+                 * 这里将区块链对象反回了操作
+                 */
+                
+//                for (transaction transaction: block_object.transactions) {
+//                    for (operations.operation_type operation_type :transaction.operations) {
+//                        if (operation_type.nOperationType == 1) {
+//                            operations.limit_order_create_operation limitOrderCreateOperation = (operations.limit_order_create_operation) operation_type.operationContent;
+//                        }
+//                    }
+//                }
+            }
+        });
+    }
+
+}
 ```
