@@ -39,7 +39,6 @@ public abstract class WebsocketCallBackApi implements websocketInterface  {
         try {
             mWebsocket = new websocketClient(server,this);
             mWebsocket.connect();
-//            System.out.println("开始连接" + strServer);
         } catch (URISyntaxException e) {
             return false;
         }
@@ -71,8 +70,6 @@ public abstract class WebsocketCallBackApi implements websocketInterface  {
 
         CallBackUploadAbstractModel model = hashMap.get(callReceiveModel.getId());
 
-        System.out.println(resultMsg);
-
         if (model != null) {
             if (callReceiveModel.callBackRecvModel != null) model.reciveCallMessage(callReceiveModel.callBackRecvModel.result);
             if (callReceiveModel.noticeRecvModel != null) model.reciveNoticeMessage(callReceiveModel.noticeRecvModel.params.detailParams);
@@ -100,8 +97,6 @@ public abstract class WebsocketCallBackApi implements websocketInterface  {
         CallBackUploadAbstractModel model = new CallBackUploadAbstractModel("database",new ArrayList<>()) {
             @Override
             public void reciveCallMessage(JsonElement result) {
-                System.out.println(result);
-
                 dataBaseId = result.getAsInt();
 
                 for (CallBackUploadAbstractModel needDo : needDoList) {
