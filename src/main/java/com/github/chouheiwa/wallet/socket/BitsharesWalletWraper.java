@@ -162,6 +162,12 @@ public class BitsharesWalletWraper {
         return 0;
     }
 
+    public List<limit_order_object> get_limit_orders(object_id<asset_object> base,
+                                                     object_id<asset_object> quote,
+                                                     int limit) throws Exception {
+        return mWalletApi.get_limit_orders(base, quote, limit);
+    }
+
     public int import_brain_key(String strAccountNameOrId, String strBrainKey) {
         try {
             int nRet = mWalletApi.import_brain_key(strAccountNameOrId, strBrainKey);
