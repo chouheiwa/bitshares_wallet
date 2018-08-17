@@ -20,7 +20,11 @@ public class BlockOperationsResult {
 
             blockOperationsResult.operationType = jsonElement.getAsJsonArray().get(0).getAsInt();
 
-            blockOperationsResult.operationId = object_id.create_from_string(jsonElement.getAsJsonArray().get(1).getAsString());
+            try {
+                blockOperationsResult.operationId = object_id.create_from_string(jsonElement.getAsJsonArray().get(1).getAsString());
+            }catch (Exception e) {
+                blockOperationsResult.operationId = null;
+            }
 
             return blockOperationsResult;
         }
