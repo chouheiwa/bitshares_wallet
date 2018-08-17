@@ -35,11 +35,11 @@ import java.util.Arrays;
  * around the internet.
  * </p>
  *
- * 
+ *
  * <p>
  * Satoshi says: why base-58 instead of standard base-64 encoding?
  * </p>
- * 
+ *
  * <ul>
  * <li>Don't want 0OIl characters that look the same in some fonts and could be
  * used to create visually identical looking account numbers.</li>
@@ -114,7 +114,7 @@ public class Base58 {
       System.arraycopy(checkSum.getBytes(), 0, b, input.length, 4);
       return encode(b);
    }
-   
+
    public static byte[] decode(String input) {
       if (input.length() == 0) {
          return new byte[0];

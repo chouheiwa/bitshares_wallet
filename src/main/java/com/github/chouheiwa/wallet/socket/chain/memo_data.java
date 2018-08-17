@@ -12,9 +12,11 @@ import com.github.chouheiwa.wallet.socket.fc.crypto.sha512_object;
 import com.github.chouheiwa.wallet.socket.fc.io.raw_type;
 import com.github.chouheiwa.wallet.socket.private_key;
 import com.github.chouheiwa.wallet.socket.public_key;
+import com.google.gson.Gson;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
 
 public class memo_data {
     public static class memo_message {
@@ -116,6 +118,8 @@ public class memo_data {
         byte[] ivBytes = new byte[16];
         System.arraycopy(sha512Object.hash, 32, ivBytes, 0, ivBytes.length);
 
+        byte[] bytes = byteBufferText.array();
+
         message = aes.encrypt(byteKey, ivBytes, byteBufferText.array());
     }
 
@@ -124,6 +128,8 @@ public class memo_data {
 
         baseEncoder.write(this.from.key_data);
         baseEncoder.write(this.to.key_data);
+        byte[] arr = rawObject.get_byte_array(this.nonce);
+
         baseEncoder.write(rawObject.get_byte_array(this.nonce));
         byte[] byteMessage = this.message.array();
         rawObject.pack(baseEncoder, UnsignedInteger.fromIntBits(byteMessage.length));

@@ -12,6 +12,7 @@ import com.github.chouheiwa.wallet.socket.fc.io.raw_type;
 import com.github.chouheiwa.wallet.socket.private_key;
 import com.github.chouheiwa.wallet.socket.public_key;
 import org.spongycastle.crypto.digests.SHA256Digest;
+import org.spongycastle.util.Pack;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
@@ -243,7 +244,7 @@ public class types {
 
                 if (Arrays.equals(check1, check) == false &&
                         Arrays.equals(check2, check) == false) {
-//                    throw new RuntimeException("Private key is not valid");
+                    throw new RuntimeException("Private key is not valid");
                 }
             }
 
@@ -344,12 +345,5 @@ public class types {
 
     class void_t {
 
-    }
-    public static class TestClass {
-        public String id;
-    }
-
-    public static class TestClass2 {
-        public object_id<account_object> id;
     }
 }

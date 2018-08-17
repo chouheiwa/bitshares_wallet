@@ -439,6 +439,10 @@ public class BitsharesWalletWraper {
         return mWalletApi.get_account_history_operations_with_last_id(accountId, operation, nLimit, id);
     }
 
+    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation, int nLimit,int start,int stop) throws NetworkStatusException {
+        return mWalletApi.get_account_history_operations(accountId,operation,start,stop,nLimit);
+    }
+
     public operation_types_histoy_object get_account_history_by_operations(String accountIdOrName,List<Integer> operation_types, int start, int nLimit) throws Exception {
         return mWalletApi.get_account_history_by_operations(accountIdOrName,operation_types,start,nLimit);
     }
@@ -589,35 +593,6 @@ public class BitsharesWalletWraper {
             witness_budget = dynamic_obj.witness_budget;
         }
         return witness_budget;
-    }
-
-    public boolean is_suggest_brain_key(String accountName) {
-        String suggestPublicKey = "";
-        String suggestPrivateKey = "";
-            try {
-                BitsharesWalletWraper bww = new BitsharesWalletWraper();
-                account_object account = bww.get_account_object(accountName);
-                if (account != null) {
-                    types.public_key_type pubKeyType = account.owner.get_keys().get(0);
-                    if (pubKeyType != null) {
-                        suggestPublicKey = pubKeyType.toString();
-                        types.private_key_type privateKeyType = bww.get_wallet_hash().get(pubKeyType);
-                        if (privateKeyType != null) {
-                            suggestPrivateKey = privateKeyType.toString();
-                        } else{
-                            privateKeyType = bww.get_wallet_hash().get(pubKeyType);
-                            if (privateKeyType != null) {
-                                suggestPrivateKey = privateKeyType.toString();
-                            }
-                        }
-
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return (suggestPublicKey.equals("") || suggestPrivateKey.equals(""));
     }
 
     public List<account_object> lookup_account_names(String strAccountName) throws Exception {

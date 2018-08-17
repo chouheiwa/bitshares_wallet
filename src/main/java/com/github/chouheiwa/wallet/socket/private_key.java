@@ -122,17 +122,13 @@ public class private_key {
                 }
             };
 
-            while (true) {
+            do {
                 InMemoryPrivateKey inMemoryPrivateKey = new InMemoryPrivateKey(key_data);
                 SignedMessage signedMessage = inMemoryPrivateKey.signHash(new Sha256Hash(digest.hash), randomSource);
                 byte[] byteCompact = signedMessage.bitcoinEncodingOfSignature();
                 signature = new compact_signature(byteCompact);
 
-                boolean bResult = public_key.is_canonical(signature);
-                if (bResult == true) {
-                    break;
-                }
-            }
+            } while (!public_key.is_canonical(signature));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -158,5 +154,4 @@ public class private_key {
 
         return sha512_object.create_from_byte_array(secret, 0, secret.length);
     }
-
 }

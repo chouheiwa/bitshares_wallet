@@ -374,6 +374,11 @@ public class wallet_api {
         return mWebsocketApi.get_account_history_operations(accountId,operation,id,0,nLimit);
     }
 
+    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation, int nLimit,int start,int stop) throws NetworkStatusException {
+        return mWebsocketApi.get_account_history_operations(accountId,operation,start,stop,nLimit);
+    }
+
+
     public List<operation_history_object> get_account_history_with_last_id(object_id<account_object> accountId, int nLimit,String id) throws NetworkStatusException {
 
         List<operation_history_object> list = mWebsocketApi.get_account_history_with_last_id(accountId, nLimit,id);

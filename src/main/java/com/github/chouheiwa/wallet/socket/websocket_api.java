@@ -1183,6 +1183,8 @@ public class websocket_api implements websocketInterface {
         Gson gson = global_config_object.getInstance().getGsonBuilder().create();
         String strMessage = gson.toJson(callObject);
 
+//        System.out.println(strMessage);
+
         synchronized (mHashMapIdToProcess) {
             mHashMapIdToProcess.put(callObject.id, replyObjectProcess);
         }
@@ -1196,7 +1198,7 @@ public class websocket_api implements websocketInterface {
         }
 
         synchronized (replyObjectProcess) {
-            log.debug("Wallet send message:" + strMessage);
+//            log.debug("Wallet send message:" + strMessage);
             mWebsocket.send(strMessage);
 
             try {
@@ -1204,8 +1206,8 @@ public class websocket_api implements websocketInterface {
                 Reply<T> replyObject = replyObjectProcess.getReplyObject();
                 String jsonResp = replyObjectProcess.getResponse();
 
-                log.debug("Wallet receive message:" + jsonResp);
-                System.out.println("Wallet receive message:" + jsonResp);
+//                log.debug("Wallet receive message:" + jsonResp);
+//                System.out.println("Wallet receive message:" + jsonResp);
                 String strError = replyObjectProcess.getError();
                 if (TextUtils.isEmpty(strError) == false) {
 //                   throw new NetworkStatusException(strError);

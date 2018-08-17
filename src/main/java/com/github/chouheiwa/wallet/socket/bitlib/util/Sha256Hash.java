@@ -58,7 +58,7 @@ public class Sha256Hash implements Serializable, Comparable<Sha256Hash> {
    /**
     * takes 32 bytes and stores them as hash. does not actually hash, this is
     * done in HashUtils
-    * 
+    *
     * @param bytes
     *           to be stored
     * @return sha256
@@ -160,5 +160,4 @@ public class Sha256Hash implements Serializable, Comparable<Sha256Hash> {
    public String toHex() {
       return HexUtils.toHex(_bytes);
    }
-
 }

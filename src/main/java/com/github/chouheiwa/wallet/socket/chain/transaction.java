@@ -1,6 +1,7 @@
 package com.github.chouheiwa.wallet.socket.chain;
 
 import com.github.chouheiwa.wallet.socket.common.UnsignedShort;
+import com.github.chouheiwa.wallet.socket.fc.io.base_encoder;
 import com.google.common.primitives.UnsignedInteger;
 import com.github.chouheiwa.wallet.socket.account_object;
 import com.github.chouheiwa.wallet.socket.authority;
@@ -11,6 +12,7 @@ import com.github.chouheiwa.wallet.socket.fc.bitutil;
 import com.github.chouheiwa.wallet.socket.fc.crypto.ripemd160_object;
 import com.github.chouheiwa.wallet.socket.fc.crypto.sha256_object;
 import com.github.chouheiwa.wallet.socket.fc.io.raw_type;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Date;
