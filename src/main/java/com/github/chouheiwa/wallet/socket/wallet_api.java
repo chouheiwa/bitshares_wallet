@@ -374,7 +374,7 @@ public class wallet_api {
         return mWebsocketApi.get_account_history_operations(accountId,operation,id,0,nLimit);
     }
 
-    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation, int nLimit,int start,int stop) throws NetworkStatusException {
+    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation,int start,int stop, int nLimit) throws NetworkStatusException {
         return mWebsocketApi.get_account_history_operations(accountId,operation,start,stop,nLimit);
     }
 

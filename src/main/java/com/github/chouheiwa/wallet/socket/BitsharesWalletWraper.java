@@ -439,7 +439,7 @@ public class BitsharesWalletWraper {
         return mWalletApi.get_account_history_operations_with_last_id(accountId, operation, nLimit, id);
     }
 
-    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation, int nLimit,int start,int stop) throws NetworkStatusException {
+    public List<operation_history_object> get_account_history_operations(object_id<account_object> accountId, int operation,int start,int stop,int nLimit) throws NetworkStatusException {
         return mWalletApi.get_account_history_operations(accountId,operation,start,stop,nLimit);
     }
 

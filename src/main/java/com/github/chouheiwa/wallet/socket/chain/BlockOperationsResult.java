@@ -10,7 +10,7 @@ import java.lang.reflect.Type;
 public class BlockOperationsResult {
     public Integer operationType;
 
-    public object_id operationId;
+    public Object operationContent;
 
     public static class BlockOperationsResultDeserializer implements JsonDeserializer<BlockOperationsResult> {
 
@@ -21,9 +21,19 @@ public class BlockOperationsResult {
             blockOperationsResult.operationType = jsonElement.getAsJsonArray().get(0).getAsInt();
 
             try {
-                blockOperationsResult.operationId = object_id.create_from_string(jsonElement.getAsJsonArray().get(1).getAsString());
+                switch (blockOperationsResult.operationType) {
+                    case 1:
+                        blockOperationsResult.operationContent = object_id.create_from_string(jsonElement.getAsJsonArray().get(1).getAsString());
+                        break;
+                    case 2:
+                        blockOperationsResult.operationContent = jsonDeserializationContext.deserialize(jsonElement.getAsJsonArray().get(1),asset_object.class);
+                        break;
+                    default:
+                        blockOperationsResult.operationContent = new Object();
+                        break;
+                }
             }catch (Exception e) {
-                blockOperationsResult.operationId = null;
+                blockOperationsResult.operationContent = null;
             }
 
             return blockOperationsResult;
