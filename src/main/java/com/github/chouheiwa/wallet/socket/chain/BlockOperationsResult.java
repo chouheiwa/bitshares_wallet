@@ -1,5 +1,6 @@
 package com.github.chouheiwa.wallet.socket.chain;
 
+import com.github.chouheiwa.wallet.socket.asset;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -26,7 +27,7 @@ public class BlockOperationsResult {
                         blockOperationsResult.operationContent = object_id.create_from_string(jsonElement.getAsJsonArray().get(1).getAsString());
                         break;
                     case 2:
-                        blockOperationsResult.operationContent = jsonDeserializationContext.deserialize(jsonElement.getAsJsonArray().get(1),asset_object.class);
+                        blockOperationsResult.operationContent = jsonDeserializationContext.deserialize(jsonElement.getAsJsonArray().get(1),asset.class);
                         break;
                     default:
                         blockOperationsResult.operationContent = new Object();

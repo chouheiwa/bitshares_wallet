@@ -12,7 +12,7 @@ It can be used in maven.
 
 Simple usage:
 
-Now the latest version is 2.1.12
+Now the latest version is 2.1.14
 
 If you want to use it in your project,you should
 
