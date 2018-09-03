@@ -12,7 +12,7 @@ It can be used in maven.
 
 Simple usage:
 
-Now the latest version is 2.1.14
+Now the latest version is 2.1.15
 
 If you want to use it in your project,you should
 
@@ -21,7 +21,7 @@ If you want to use it in your project,you should
 <dependency>
             <groupId>com.github.chouheiwa</groupId>
             <artifactId>wallet</artifactId>
-            <version>2.1.11</version>
+            <version>2.1.15</version>
 </dependency>
 ```
 2. Use class BitsharesWalletWrapper
