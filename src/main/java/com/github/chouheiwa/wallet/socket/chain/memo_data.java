@@ -2,6 +2,7 @@ package com.github.chouheiwa.wallet.socket.chain;
 
 import com.github.chouheiwa.wallet.socket.fc.io.base_encoder;
 import com.github.chouheiwa.wallet.socket.bitlib.bitcoinj.Base58;
+import com.google.common.io.BaseEncoding;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.github.chouheiwa.wallet.socket.bitlib.bitcoinj.Base58;
@@ -137,8 +138,13 @@ public class memo_data {
     }
 
     public String get_message(private_key privateKey, public_key publicKey) {
+        String message_decrypt = decrypt_message(privateKey, publicKey, nonce.toString(), message);
+        return message_decrypt != null ? message_decrypt : "";
+    }
+
+    private static String decrypt_message(private_key privateKey, public_key publicKey, String nonce, ByteBuffer message) {
         sha512_object sha512Object = privateKey.get_shared_secret(publicKey);
-        String strNoncePlusSecret = nonce.toString() + sha512Object.toString();
+        String strNoncePlusSecret = nonce + sha512Object.toString();
         sha512Object = sha512_object.create_from_string(strNoncePlusSecret);
 
         byte[] byteKey = new byte[32];
@@ -159,6 +165,20 @@ public class memo_data {
             return memoMessage.text;
         }
 
-        return "";
+        return null;
+    }
+
+    public static String decrypt_message(private_key privateKey, public_key publicKey, String encrypted_image, String nonce) {
+        ByteBuffer message;
+
+        try {
+            BaseEncoding encoding = BaseEncoding.base16().lowerCase();
+            byte[] byteResult = encoding.decode(encrypted_image);
+            message = ByteBuffer.wrap(byteResult);
+        } catch (Exception e) {
+            message = ByteBuffer.wrap(Base58.decode(encrypted_image));
+        }
+
+        return decrypt_message(privateKey, publicKey, nonce, message);
     }
 }
