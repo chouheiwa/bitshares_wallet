@@ -1278,10 +1278,21 @@ public class wallet_api {
     }
 
     public signed_transaction create_account_with_pub_key(String publicKey,
-                                                              String strAccountName,
-                                                               String strRegistar,
-                                                              String strReferrer,
-                                                              int refferPercent) throws NetworkStatusException {
+                                                          String strAccountName,
+                                                          String strRegistar,
+                                                          String strReferrer,
+                                                          int refferPercent) throws NetworkStatusException {
+        account_object accountRegistrar = get_account(strRegistar);
+        account_object accountReferr = get_account(strReferrer);
+        return create_account_with_pub_key(publicKey, strAccountName, accountRegistrar.id.get_instance(), accountReferr.id.get_instance(), refferPercent, null);
+    }
+
+    public signed_transaction create_account_with_pub_key(String publicKey,
+                                                          String strAccountName,
+                                                          int registerId,
+                                                          int refferId,
+                                                          int refferPercent,
+                                                          List<String> privateKeys) throws NetworkStatusException {
 
         if (refferPercent > 100 || refferPercent < 0) {
             return null;
@@ -1316,11 +1327,8 @@ public class wallet_api {
         operation.active = new authority(1, publicActiveKey, 1);
         operation.owner = new authority(1, publicOwnerKey, 1);
 
-        account_object accountRegistrar = get_account(strRegistar);
-        account_object accountReferr = get_account(strReferrer);
-
-        operation.referrer = accountReferr.id;
-        operation.registrar = accountRegistrar.id;
+        operation.referrer = new object_id<account_object>(1,2,refferId);
+        operation.registrar = new object_id<account_object>(1,2,registerId);
         operation.referrer_percent = refferPercent * 100;
 
 
@@ -1336,87 +1344,10 @@ public class wallet_api {
         tx.extensions = new HashSet<>();
         set_operation_fees(tx, get_global_properties().parameters.current_fees);
 
-        return sign_create_account_transaction(tx);
+        return sign_transaction(tx, privateKeys);
     }
 
-    private signed_transaction sign_create_account_transaction(signed_transaction tx) throws NetworkStatusException {
-        // // TODO: 07/09/2017 这里的set应出问题
-        signed_transaction.required_authorities requiresAuthorities = tx.get_required_authorities();
-
-        Set<object_id<account_object>> req_active_approvals = new HashSet<>();
-        req_active_approvals.addAll(requiresAuthorities.active);
-
-        Set<object_id<account_object>> req_owner_approvals = new HashSet<>();
-        req_owner_approvals.addAll(requiresAuthorities.owner);
-
-
-        for (authority authorityObject : requiresAuthorities.other) {
-            for (object_id<account_object> accountObjectId : authorityObject.account_auths().keySet()) {
-                req_active_approvals.add(accountObjectId);
-            }
-        }
-
-        Set<object_id<account_object>> accountObjectAll = new HashSet<>();
-        accountObjectAll.addAll(req_active_approvals);
-        accountObjectAll.addAll(req_owner_approvals);
-
-
-        List<object_id<account_object>> listAccountObjectId = new ArrayList<>();
-        listAccountObjectId.addAll(accountObjectAll);
-
-        List<account_object> listAccountObject = get_accounts(listAccountObjectId);
-        HashMap<object_id<account_object>, account_object> hashMapIdToObject = new HashMap<>();
-        for (account_object accountObject : listAccountObject) {
-            hashMapIdToObject.put(accountObject.id, accountObject);
-        }
-
-        HashSet<types.public_key_type> approving_key_set = new HashSet<>();
-        for (object_id<account_object> accountObjectId : req_active_approvals) {
-            account_object accountObject = hashMapIdToObject.get(accountObjectId);
-            approving_key_set.addAll(accountObject.active.get_keys());
-        }
-
-        for (object_id<account_object> accountObjectId : req_owner_approvals) {
-            account_object accountObject = hashMapIdToObject.get(accountObjectId);
-            approving_key_set.addAll(accountObject.owner.get_keys());
-        }
-
-        for (authority authorityObject : requiresAuthorities.other) {
-            for (types.public_key_type publicKeyType : authorityObject.get_keys()) {
-                approving_key_set.add(publicKeyType);
-            }
-        }
-
-        // // TODO: 07/09/2017 被简化了
-        dynamic_global_property_object dynamicGlobalPropertyObject = get_dynamic_global_properties();
-        tx.set_reference_block(dynamicGlobalPropertyObject.head_block_id);
-
-        Date dateObject = dynamicGlobalPropertyObject.time;
-        Calendar calender = Calendar.getInstance();
-        calender.setTime(dateObject);
-        calender.add(Calendar.SECOND, 30);
-
-        dateObject = calender.getTime();
-
-        tx.set_expiration(dateObject);
-
-        for (types.public_key_type pulicKeyType : approving_key_set) {
-            types.private_key_type privateKey = mHashMapPub2Priv.get(pulicKeyType);
-            if (privateKey != null) {
-                tx.sign(privateKey, mWalletObject.chain_id);
-            }
-        }
-
-        // 发出tx，进行广播，这里也涉及到序列化
-        int nRet = mWebsocketApi.broadcast_json_transaction(tx, "");
-        if (nRet == 0) {
-            return tx;
-        } else {
-            return null;
-        }
-    }
-
-    private signed_transaction sign_transaction(signed_transaction tx) throws NetworkStatusException {
+    private signed_transaction sign_transaction(signed_transaction tx, List<String> privateKeys) throws NetworkStatusException {
         // // TODO: 07/09/2017 这里的set应出问题
         signed_transaction.required_authorities requiresAuthorities = tx.get_required_authorities();
 
@@ -1477,13 +1408,21 @@ public class wallet_api {
 
         tx.set_expiration(dateObject);
 
-        for (types.public_key_type pulicKeyType : approving_key_set) {
-            types.private_key_type privateKey = mHashMapPub2Priv.get(pulicKeyType);
-            if (privateKey != null) {
-                tx.sign(privateKey, mWalletObject.chain_id);
+        if (privateKeys != null && privateKeys.size() > 0) {
+            for (String privateKeyString : privateKeys) {
+                types.private_key_type privateKey = new types.private_key_type(privateKeyString);
+                if (privateKey != null) {
+                    tx.sign(privateKey, mWalletObject.chain_id);
+                }
+            }
+        } else {
+            for (types.public_key_type pulicKeyType : approving_key_set) {
+                types.private_key_type privateKey = mHashMapPub2Priv.get(pulicKeyType);
+                if (privateKey != null) {
+                    tx.sign(privateKey, mWalletObject.chain_id);
+                }
             }
         }
-
         // 发出tx，进行广播，这里也涉及到序列化
         int nRet = mWebsocketApi.broadcast_transaction(tx);
         if (nRet == 0) {
@@ -1491,6 +1430,10 @@ public class wallet_api {
         } else {
             return null;
         }
+    }
+
+    private signed_transaction sign_transaction(signed_transaction tx) throws NetworkStatusException {
+        return sign_transaction(tx, null);
     }
 
     public List<CallOrder> get_call_orders(object_id asset_id,Integer limit) throws NetworkStatusException {

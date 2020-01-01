@@ -406,16 +406,6 @@ public final class Rijndael {
         rdk = new int[Nw];
         if ((direction & DIR_BOTH) != 0) {
             expandKey(cipherKey);
-            /*
-            for (int r = 0; r <= Nr; r++) {
-            	System.out.print("RK" + r + "=");
-            	for (int i = 0; i < 4; i++) {
-            		int w = rek[4*r + i];
-            		System.out.print(" " + Integer.toHexString(w));
-            	}
-            	System.out.println();
-            }
-            */
             if ((direction & DIR_DECRYPT) != 0) {
                 invertKey();
             }

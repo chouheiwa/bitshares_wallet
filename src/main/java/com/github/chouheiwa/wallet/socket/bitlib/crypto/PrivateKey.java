@@ -77,7 +77,6 @@ public abstract class PrivateKey implements BitcoinSigner, Serializable {
       boolean compressed = targetPubKey.isCompressed();
       int recId = -1;
       for (int i = 0; i < 4; i++) {
-
          PublicKey k = SignedMessage.recoverFromSignature(i, sig, hashToSign, compressed);
          if (k != null && targetPubKey.equals(k)) {
             recId = i;

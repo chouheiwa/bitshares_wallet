@@ -45,7 +45,6 @@ public class websocket_api implements websocketInterface {
 
     @Override
     public void onOpen() {
-//        System.out.println("连接成功");
         synchronized (mWebsocket) {
             mnConnectStatus = WEBSOCKET_CONNECT_SUCCESS;
             mWebsocket.notify();
@@ -204,7 +203,6 @@ public class websocket_api implements websocketInterface {
         try {
             mWebsocket = new websocketClient(strServer,this);
             mWebsocket.connect();
-//            System.out.println("开始连接" + strServer);
         } catch (URISyntaxException e) {
             return ErrorCode.ERROR_CONNECT_SERVER_FAILD;
         }
@@ -217,7 +215,6 @@ public class websocket_api implements websocketInterface {
                 }
 
                 if (mnConnectStatus != WEBSOCKET_CONNECT_SUCCESS) {
-//                    System.out.println("连接失败" + strServer);
                     return ErrorCode.ERROR_CONNECT_SERVER_FAILD;
                 }
             }
@@ -391,8 +388,6 @@ public class websocket_api implements websocketInterface {
         ReplyObjectProcess<Reply<List<CallOrder>>> replyObject =
                 new ReplyObjectProcess<>(new TypeToken<Reply<List<CallOrder>>>(){}.getType());
         Reply<List<CallOrder>> replyDatabase = sendForReply(callObject, replyObject);
-
-//        System.out.println(replyObject.getResponse());
 
         if (replyDatabase == null) {
             return null;
@@ -1183,8 +1178,6 @@ public class websocket_api implements websocketInterface {
         Gson gson = global_config_object.getInstance().getGsonBuilder().create();
         String strMessage = gson.toJson(callObject);
 
-//        System.out.println(strMessage);
-
         synchronized (mHashMapIdToProcess) {
             mHashMapIdToProcess.put(callObject.id, replyObjectProcess);
         }
@@ -1198,7 +1191,6 @@ public class websocket_api implements websocketInterface {
         }
 
         synchronized (replyObjectProcess) {
-//            log.debug("Wallet send message:" + strMessage);
             mWebsocket.send(strMessage);
 
             try {
@@ -1207,20 +1199,15 @@ public class websocket_api implements websocketInterface {
                 String jsonResp = replyObjectProcess.getResponse();
 
 //                log.debug("Wallet receive message:" + jsonResp);
-//                System.out.println("Wallet receive message:" + jsonResp);
                 String strError = replyObjectProcess.getError();
                 if (TextUtils.isEmpty(strError) == false) {
-//                   throw new NetworkStatusException(strError);
-                    return null;
+                   throw new NetworkStatusException(strError);
                 } else if (replyObjectProcess.getException() != null) {
-//                   throw new NetworkStatusException(replyObjectProcess.getException());
-                    return null;
+                   throw new NetworkStatusException(replyObjectProcess.getException());
                 } else if (replyObject == null) {
-//                    throw new NetworkStatusException("Reply object is null.\n" + replyObjectProcess.getResponse());
-                    return null;
+                    throw new NetworkStatusException("Reply object is null.\n" + replyObjectProcess.getResponse());
                 }else if (replyObject.error != null) {
-//                   throw new NetworkStatusException(gson.toJson(replyObject.error));
-                    return null;
+                   throw new NetworkStatusException(gson.toJson(replyObject.error));
                 }
                 return replyObject;
             } catch (InterruptedException e) {

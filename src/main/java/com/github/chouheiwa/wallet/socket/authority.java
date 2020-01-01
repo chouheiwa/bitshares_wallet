@@ -225,8 +225,6 @@ public class authority {
 
             baseEncoder.write(rawObject.get_byte_array(weight.shortValue()));
         }
-
-        System.out.println("authority address_auths");
         rawObject.pack(baseEncoder,UnsignedInteger.fromIntBits(address_auths.size()));
     }
 }
