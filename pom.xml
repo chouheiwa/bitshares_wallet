@@ -92,7 +92,7 @@
         <dependency>
             <groupId>org.java-websocket</groupId>
             <artifactId>Java-WebSocket</artifactId>
-            <version>RELEASE</version>
+            <version>1.5.0</version>
             <scope>compile</scope>
         </dependency>
 
